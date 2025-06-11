@@ -202,11 +202,56 @@ button {
 }
 
 .ticket {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   padding: 12px;
   background-color: var(--background-color);
   border-radius: 8px;
   box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.1);
   margin-bottom: 12px;
+  height: 80px; /* Consistent height for all tickets */
+}
+
+.ticket-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.ticket-id {
+  font-weight: bold;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ticket-actions {
+  margin-left: auto;
+}
+
+.action-btn {
+  min-width: 90px; /* Ensure consistent button width */
+  height: 40px; /* Ensure consistent button height */
+  padding: 0; /* Remove default padding */
+  font-size: 0.9rem;
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  transition: background-color 0.3s ease, transform 0.1s ease;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+input[type="checkbox"] {
+  width: 24px; /* Set a consistent width */
+  height: 24px; /* Set a consistent height */
+  margin: 0 12px 0 0; /* Ensure proper spacing and alignment */
+  accent-color: var(--primary-color); /* Set checkbox color */
+  display: flex; /* Align the checkbox */
+  align-items: center; /* Center the checkbox */
 }
 
 .modal-bg {
@@ -228,6 +273,10 @@ button {
   width: 100%;
   max-width: 400px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.cancel-btn{
+  margin-top:5px;
 }
 
 @keyframes slideDown {
