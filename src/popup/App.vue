@@ -23,7 +23,9 @@
             </span>
           </div>
         </div>
-        <button class="showmore-btn" v-if="tickets.length > ticketsToShow" @click="showMoreTickets">Show More</button>
+        <button v-if="tickets.length > ticketsToShow" @click="showMoreTickets" class="show-more-btn">
+          <span class="arrow"></span>   
+        </button>
         <button class="submit-btn" @click="submitLogs">Submit Selected Logs</button>
       </div>
     </div>
@@ -281,8 +283,38 @@ input[type="checkbox"] {
   max-width: 400px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
-.showmore-btn{
-  margin-bottom:10px;
+
+.show-more-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: -20px auto 10px auto; /* Negative top margin for overlap */
+  transition: background-color 0.3s ease, transform 0.2s ease;
+  padding: 0;
+  position: relative; /* Ensure it can overlap */
+  z-index: 1; /* Make sure it appears over the tickets */
+}
+
+.show-more-btn:hover {
+  background-color: var(--primary-color-hover);
+  transform: scale(1.1);
+}
+
+.arrow {
+  display: block;
+  width: 12px;
+  height: 12px;
+  border-width: 3px;
+  border-style: solid;
+  border-color: transparent transparent white white;
+  transform: rotate(-45deg) translate(3px ,-3px);
 }
 
 .cancel-btn{
