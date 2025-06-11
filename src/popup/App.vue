@@ -8,9 +8,10 @@
     </div>
     <div v-else>
       <h3>Your Tickets</h3>
+      <input v-model="searchQuery" placeholder="Search tickets..." class="search-input" />
       <div v-if="loading">Loading...</div>
       <div v-else>
-        <div v-for="(ticket) in tickets.slice(0, ticketsToShow)" :key="ticket.idReadable" class="ticket">
+        <div v-for="(ticket) in filteredTickets.slice(0, ticketsToShow)" :key="ticket.idReadable" class="ticket">
           <div class="ticket-info">
             <input type="checkbox" v-model="selectedTickets[ticket.idReadable]" />
             <span class="ticket-id"><b>{{ ticket.idReadable }}</b></span>
@@ -23,8 +24,8 @@
             </span>
           </div>
         </div>
-        <button v-if="tickets.length > ticketsToShow" @click="showMoreTickets" class="show-more-btn">
-          <span class="arrow"></span>   
+        <button v-if="filteredTickets.length > ticketsToShow" @click="showMoreTickets" class="show-more-btn">
+          <span class="arrow"></span>
         </button>
         <button class="submit-btn" @click="submitLogs">Submit Selected Logs</button>
       </div>
@@ -47,7 +48,7 @@
 </template>
 
 <script setup>
-import { ref, reactive } from 'vue'
+import { ref, reactive,computed } from 'vue'
 
 const ytUrl = ref('')
 const ytToken = ref('')
@@ -56,6 +57,7 @@ const tickets = ref([])
 const selectedTickets = reactive({})
 const logs = reactive({})
 const loading = ref(false)
+const searchQuery = ref('') 
 const modal = reactive({
   show: false,
   ticketId: '',
@@ -65,6 +67,14 @@ const modal = reactive({
 })
 
 const ticketsToShow = ref(5)
+
+const filteredTickets = computed(() => {
+  if (!searchQuery.value) return tickets.value
+  return tickets.value.filter(ticket => 
+    ticket.idReadable.toLowerCase().includes(searchQuery.value.toLowerCase()) || 
+    ticket.summary.toLowerCase().includes(searchQuery.value.toLowerCase())
+  )
+})
 
 // Load auth from chrome.storage
 chrome.storage.sync.get(['ytUrl', 'ytToken'], (data) => {
@@ -115,6 +125,12 @@ function openModal(ticketId) {
   modal.show = true
 }
 function saveModal() {
+
+   if (!modal.time || !modal.date) {
+    alert('Please fill out both the time and date fields.');
+    return;
+  }
+  
   logs[modal.ticketId] = {
     time: modal.time,
     date: modal.date,
@@ -127,26 +143,41 @@ function closeModal() { modal.show = false }
 async function submitLogs() {
   const selectedIds = Object.keys(selectedTickets).filter(id => selectedTickets[id])
   if (!selectedIds.length) return alert('Select at least one ticket.')
+
   loading.value = true
-  for (const ticketId of selectedIds) {
-    const log = logs[ticketId]
-    if (!log) continue
-    await fetch(`${ytUrl.value}/api/issues/${ticketId}/timeTracking/workItems`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${ytToken.value}`,
-        'Accept': 'application/json',
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        duration: { presentation: log.time },
-        date: log.date,
-        text: log.comment
+  try {
+    for (const ticketId of selectedIds) {
+      const log = logs[ticketId]
+      if (!log) continue
+      
+      const logDate = new Date(log.date).getTime(); 
+
+      const response = await fetch(`${ytUrl.value}/api/issues/${ticketId}/timeTracking/workItems`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${ytToken.value}`,
+          'Accept': 'application/json',
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          duration: { presentation: log.time },
+          date: logDate,
+          text: log.comment
+        })
       })
-    })
+
+      if (!response.ok) {
+        const errorData = await response.json(); 
+        throw new Error(`Failed to submit log for ticket ${ticketId}: ${JSON.stringify(errorData)}`);
+      }
+    }
+    alert('Logs submitted successfully!')
+  } catch (error) {
+    console.error('Error submitting logs:', error)
+    alert('An error occurred while submitting logs. Please try again.',error)
+  } finally {
+    loading.value = false
   }
-  loading.value = false
-  alert('Logs submitted!')
 }
 
 function showMoreTickets() {
