@@ -10,7 +10,7 @@
       <h3>Your Tickets</h3>
       <div v-if="loading">Loading...</div>
       <div v-else>
-        <div v-for="ticket in tickets" :key="ticket.idReadable" class="ticket">
+        <div v-for="(ticket) in tickets.slice(0, ticketsToShow)" :key="ticket.idReadable" class="ticket">
           <div class="ticket-info">
             <input type="checkbox" v-model="selectedTickets[ticket.idReadable]" />
             <span class="ticket-id"><b>{{ ticket.idReadable }}</b></span>
@@ -23,6 +23,7 @@
             </span>
           </div>
         </div>
+        <button class="showmore-btn" v-if="tickets.length > ticketsToShow" @click="showMoreTickets">Show More</button>
         <button class="submit-btn" @click="submitLogs">Submit Selected Logs</button>
       </div>
     </div>
@@ -60,6 +61,8 @@ const modal = reactive({
   date: '',
   comment: ''
 })
+
+const ticketsToShow = ref(5)
 
 // Load auth from chrome.storage
 chrome.storage.sync.get(['ytUrl', 'ytToken'], (data) => {
@@ -143,6 +146,11 @@ async function submitLogs() {
   loading.value = false
   alert('Logs submitted!')
 }
+
+function showMoreTickets() {
+  ticketsToShow.value += 5
+}
+
 </script>
 
 <style>
@@ -272,6 +280,9 @@ input[type="checkbox"] {
   width: 100%;
   max-width: 400px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+.showmore-btn{
+  margin-bottom:10px;
 }
 
 .cancel-btn{
