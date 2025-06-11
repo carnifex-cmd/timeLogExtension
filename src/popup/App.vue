@@ -191,8 +191,8 @@ function showMoreTickets() {
 <style>
 
 :root {
-  --primary-color: #4F46E5; 
-  --primary-color-hover: #4338CA;
+  --primary-color: #001892; 
+  --primary-color-hover: #00157c;
   --secondary-color: #10B981;
   --background-color: #F9FAFB; 
   --text-color: #374151; 
