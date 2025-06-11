@@ -14,11 +14,13 @@
         <div v-for="(ticket) in filteredTickets.slice(0, ticketsToShow)" :key="ticket.idReadable" class="ticket">
           <div class="ticket-info">
             <input type="checkbox" v-model="selectedTickets[ticket.idReadable]" />
-            <span class="ticket-id"><b>{{ ticket.idReadable }}</b></span>
-            <span class="ticket-summary">{{ ticket.summary }}</span>
+            <span class="ticket-id" :title="ticket.idReadable"><b>{{ ticket.idReadable }}</b></span>
+            <span class="ticket-summary" :title="ticket.summary">{{ ticket.summary }}</span>
           </div>
           <div class="ticket-actions">
-            <button class="action-btn" @click="openModal(ticket.idReadable)">Add Time</button>
+            <button class="action-btn" @click="openModal(ticket.idReadable)">
+              <i class="fas fa-clock"></i> 
+            </button>
             <span v-if="logs[ticket.idReadable]" class="ticket-log">
               [{{ logs[ticket.idReadable].time }} on {{ logs[ticket.idReadable].date }}]
             </span>
@@ -269,11 +271,15 @@ button {
 }
 
 .ticket-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px; /* Space between button and log */
   flex-shrink: 0; /* Prevent shrinking */
 }
 
 .action-btn {
-  width: 80px; /* Fixed width for stability */
+  width: 40px; /* Fixed width for stability */
+  margin-left:5px;
   height: 36px;
   font-size: 0.9rem;
   background-color: var(--primary-color);
@@ -287,11 +293,36 @@ button {
 }
 
 input[type="checkbox"] {
+  appearance: none;
+  margin-bottom: 5px;
   width: 20px;
   height: 20px;
-  accent-color: var(--primary-color);
-  margin-right: 12px;
-  flex-shrink: 0; /* Prevent shrinking */
+  border: 1px solid var(--primary-color);
+  border-radius: 50%;
+  outline: none;
+  cursor: pointer;
+  transition: background-color 0.3s ease, border-color 0.3s ease;
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+input[type="checkbox"]:checked {
+  background-color: var(--primary-color);
+  border-color: var(--primary-color);
+}
+
+input[type="checkbox"]:checked::before {
+  content: '';
+  width: 10px;
+  height: 10px;
+  background-color: white;
+  border-radius: 50%;
+}
+
+input[type="checkbox"]:hover {
+  border-color: var(--primary-color-hover);
 }
 
 .modal-bg {
