@@ -210,30 +210,30 @@ button {
   border-radius: 8px;
   box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.1);
   margin-bottom: 12px;
-  height: 80px; /* Consistent height for all tickets */
+  overflow: hidden;
 }
 
 .ticket-info {
   display: flex;
   align-items: center;
   gap: 12px;
+  overflow: hidden;
+  flex: 1; /* Take up remaining space */
 }
 
-.ticket-id {
-  font-weight: bold;
+.ticket-id, .ticket-summary {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
 .ticket-actions {
-  margin-left: auto;
+  flex-shrink: 0; /* Prevent shrinking */
 }
 
 .action-btn {
-  min-width: 90px; /* Ensure consistent button width */
-  height: 40px; /* Ensure consistent button height */
-  padding: 0; /* Remove default padding */
+  width: 80px; /* Fixed width for stability */
+  height: 36px;
   font-size: 0.9rem;
   background-color: var(--primary-color);
   color: white;
@@ -246,12 +246,11 @@ button {
 }
 
 input[type="checkbox"] {
-  width: 24px; /* Set a consistent width */
-  height: 24px; /* Set a consistent height */
-  margin: 0 12px 0 0; /* Ensure proper spacing and alignment */
-  accent-color: var(--primary-color); /* Set checkbox color */
-  display: flex; /* Align the checkbox */
-  align-items: center; /* Center the checkbox */
+  width: 20px;
+  height: 20px;
+  accent-color: var(--primary-color);
+  margin-right: 12px;
+  flex-shrink: 0; /* Prevent shrinking */
 }
 
 .modal-bg {
