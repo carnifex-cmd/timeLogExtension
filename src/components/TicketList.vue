@@ -1,45 +1,102 @@
 <template>
   <div class="ticket-list-container">
-    <h3>Your Tickets</h3>
-    
-    <input 
-      v-model="searchQuery" 
-      placeholder="Search tickets..." 
-      class="search-input" 
-    />
-    
-    <div v-if="loading" class="loading">Loading...</div>
-    
-    <div v-else class="ticket-content">
-      <div class="tickets">
-        <TicketItem
-          v-for="ticket in visibleTickets"
-          :key="ticket.idReadable"
-          :ticket="ticket"
-          :is-selected="selectedTickets[ticket.idReadable] || false"
-          :time-log="logs[ticket.idReadable]"
-          @toggle-selection="handleToggleSelection"
-          @open-modal="handleOpenModal"
-        />
+    <n-card title="🎫 Your Tickets" size="medium">
+      <template #header-extra>
+        <n-tag 
+          :type="hasSelectedTickets ? 'success' : 'default'" 
+          size="small"
+        >
+          {{ selectedCount }} selected
+        </n-tag>
+      </template>
+      
+      <!-- Search Input -->
+      <n-input
+        v-model:value="searchQuery"
+        placeholder="🔍 Search tickets by ID or summary..."
+        clearable
+        size="medium"
+        class="search-input"
+      >
+        <template #prefix>
+          <i class="fas fa-search"></i>
+        </template>
+      </n-input>
+      
+      <!-- Loading State -->
+      <div v-if="loading" class="loading-container">
+        <n-spin size="medium">
+          <template #description>
+            Loading your tickets...
+          </template>
+        </n-spin>
       </div>
       
-      <button 
-        v-if="hasMoreTickets" 
-        @click="$emit('show-more')" 
-        class="show-more-btn"
-        :title="'Show more tickets (${visibleTickets.length}/${filteredTickets.length})'"
-      >
-        <span class="arrow"></span>
-      </button>
-      
-      <button 
-        class="submit-btn" 
-        @click="$emit('submit-logs')"
-        :disabled="!hasSelectedTickets"
-      >
-        Submit Selected Logs
-      </button>
-    </div>
+      <!-- Ticket Content -->
+      <div v-else class="ticket-content">
+        <!-- No Results State -->
+        <n-empty 
+          v-if="filteredTickets.length === 0 && !loading"
+          description="No tickets found"
+          class="empty-state"
+        >
+          <template #icon>
+            <i class="fas fa-ticket-alt"></i>
+          </template>
+          <template #extra>
+            <n-button size="small" @click="searchQuery = ''">
+              Clear Search
+            </n-button>
+          </template>
+        </n-empty>
+        
+        <!-- Tickets List -->
+        <div v-else class="tickets-grid">
+          <TicketItem
+            v-for="ticket in visibleTickets"
+            :key="ticket.idReadable"
+            :ticket="ticket"
+            :is-selected="selectedTickets[ticket.idReadable] || false"
+            :time-log="logs[ticket.idReadable]"
+            @toggle-selection="handleToggleSelection"
+            @open-modal="handleOpenModal"
+          />
+        </div>
+        
+        <!-- Show More Button -->
+        <div v-if="hasMoreTickets" class="show-more-container">
+          <n-button
+            @click="$emit('show-more')"
+            type="primary"
+            ghost
+            size="small"
+            round
+          >
+            <template #icon>
+              <i class="fas fa-chevron-down"></i>
+            </template>
+            Show {{ Math.min(5, filteredTickets.length - ticketsToShow) }} more
+          </n-button>
+        </div>
+        
+        <!-- Submit Button -->
+        <div class="submit-container">
+          <n-button
+            @click="$emit('submit-logs')"
+            type="success"
+            size="large"
+            :disabled="!hasSelectedTickets"
+            strong
+            block
+          >
+            <template #icon>
+              <i class="fas fa-paper-plane"></i>
+            </template>
+            Submit {{ selectedCount }} Time Log{{ selectedCount !== 1 ? 's' : '' }}
+          </n-button>
+        </div>
+      </div>
+    </n-card>
   </div>
 </template>
 
@@ -82,6 +139,10 @@ const hasSelectedTickets = computed(() =>
   Object.values(props.selectedTickets).some(Boolean)
 )
 
+const selectedCount = computed(() => 
+  Object.values(props.selectedTickets).filter(Boolean).length
+)
+
 const handleToggleSelection = (ticketId) => {
   emit('toggle-selection', ticketId)
 }
@@ -92,96 +153,57 @@ const handleOpenModal = (ticketId) => {
 </script>
 
 <style scoped>
-.ticket-list-container h3 {
-  text-align: center;
-  margin-bottom: 16px;
+.ticket-list-container {
+  width: 100%;
 }
 
 .search-input {
-  width: 100%;
-  padding: 10px;
-  border: 1px solid #ddd;
-  border-radius: 6px;
-  margin-bottom: 16px;
-  outline: none;
-  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+  margin-bottom: 20px;
 }
 
-.search-input:focus {
-  border-color: var(--primary-color);
-  box-shadow: 0 0 0 3px rgba(0, 24, 146, 0.1);
-}
-
-.loading {
+.loading-container {
   text-align: center;
-  padding: 20px;
-  color: var(--text-color);
+  padding: 40px 20px;
 }
 
 .ticket-content {
   display: flex;
   flex-direction: column;
+  gap: 16px;
 }
 
-.tickets {
-  margin-bottom: 20px;
+.empty-state {
+  padding: 20px;
 }
 
-.show-more-btn {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  background-color: var(--primary-color);
-  color: white;
-  border: none;
-  cursor: pointer;
+.tickets-grid {
   display: flex;
-  justify-content: center;
-  align-items: center;
-  margin: -20px auto 10px auto;
-  transition: background-color 0.3s ease, transform 0.2s ease;
-  padding: 0;
-  position: relative;
-  z-index: 1;
+  flex-direction: column;
+  gap: 2px;
 }
 
-.show-more-btn:hover {
-  background-color: var(--primary-color-hover);
-  transform: scale(1.1);
+.show-more-container {
+  text-align: center;
+  margin: 8px 0;
 }
 
-.arrow {
-  display: block;
-  width: 12px;
-  height: 12px;
-  border-width: 3px;
-  border-style: solid;
-  border-color: transparent transparent white white;
-  transform: rotate(-45deg) translate(3px, -3px);
+.submit-container {
+  margin-top: 8px;
 }
 
-.submit-btn {
-  padding: 12px 16px;
-  background-color: var(--secondary-color);
-  color: white;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 1rem;
-  font-weight: 600;
-  transition: all 0.3s ease;
+/* Custom card styling */
+.ticket-list-container :deep(.n-card-header) {
+  padding-bottom: 16px;
 }
 
-.submit-btn:hover:not(:disabled) {
-  background-color: #059669;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 8px rgba(16, 185, 129, 0.3);
+.ticket-list-container :deep(.n-empty) {
+  padding: 20px 0;
 }
 
-.submit-btn:disabled {
-  background-color: #9CA3AF;
-  cursor: not-allowed;
-  transform: none;
-  box-shadow: none;
+/* Responsive adjustments */
+@media (max-width: 480px) {
+  .tickets-grid {
+    gap: 1px;
+  }
 }
 </style> 

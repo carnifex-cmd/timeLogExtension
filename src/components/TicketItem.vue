@@ -1,35 +1,67 @@
 <template>
-  <div class="ticket">
-    <div class="ticket-info">
-      <input 
-        type="checkbox" 
-        :checked="isSelected"
-        @change="$emit('toggle-selection', ticket.idReadable)" 
-      />
-      <span class="ticket-id" :title="ticket.idReadable">
-        {{ ticket.idReadable }}
-      </span>
-      <span class="ticket-summary" :title="ticket.summary">
-        {{ ticket.summary }}
-      </span>
+  <n-card 
+    :class="['ticket-card', { 'ticket-selected': isSelected }]"
+    size="small" 
+    hoverable
+  >
+    <div class="ticket-content">
+      <div class="ticket-info">
+        <n-checkbox
+          :checked="isSelected"
+          @update:checked="$emit('toggle-selection', ticket.idReadable)"
+          size="medium"
+        />
+        
+        <n-tag 
+          :type="isSelected ? 'primary' : 'default'"
+          size="small"
+          strong
+          class="ticket-id-tag"
+        >
+          {{ ticket.idReadable }}
+        </n-tag>
+        
+        <n-tooltip trigger="hover" :disabled="!isSummaryTruncated">
+          <template #trigger>
+            <span class="ticket-summary" ref="summaryRef">
+              {{ ticket.summary }}
+            </span>
+          </template>
+          {{ ticket.summary }}
+        </n-tooltip>
+      </div>
+      
+      <div class="ticket-actions">
+        <n-button
+          type="primary"
+          size="small"
+          circle
+          @click="$emit('open-modal', ticket.idReadable)"
+          class="time-btn"
+        >
+          <template #icon>
+            <i class="fas fa-clock"></i>
+          </template>
+        </n-button>
+        
+        <n-tag 
+          v-if="timeLog" 
+          type="success" 
+          size="tiny"
+          class="time-log-tag"
+        >
+          <template #icon>
+            <i class="fas fa-check-circle"></i>
+          </template>
+          {{ timeLog.time }} on {{ formatDate(timeLog.date) }}
+        </n-tag>
+      </div>
     </div>
-    <div class="ticket-actions">
-      <button 
-        class="action-btn" 
-        @click="$emit('open-modal', ticket.idReadable)"
-        :title="'Add time to ' + ticket.idReadable"
-      >
-        <i class="fas fa-clock"></i>
-      </button>
-      <span v-if="timeLog" class="ticket-log">
-        [{{ timeLog.time }} on {{ timeLog.date }}]
-      </span>
-    </div>
-  </div>
+  </n-card>
 </template>
 
 <script setup>
-import { defineProps, defineEmits } from 'vue'
+import { ref, onMounted, defineProps, defineEmits } from 'vue'
 
 const props = defineProps({
   ticket: {
@@ -47,19 +79,46 @@ const props = defineProps({
 })
 
 const emit = defineEmits(['toggle-selection', 'open-modal'])
+
+const summaryRef = ref(null)
+const isSummaryTruncated = ref(false)
+
+const formatDate = (dateString) => {
+  return new Date(dateString).toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric'
+  })
+}
+
+onMounted(() => {
+  // Check if summary text is truncated
+  if (summaryRef.value) {
+    isSummaryTruncated.value = summaryRef.value.scrollWidth > summaryRef.value.clientWidth
+  }
+})
 </script>
 
 <style scoped>
-.ticket {
+.ticket-card {
+  margin-bottom: 8px;
+  transition: all 0.3s ease;
+  border: 1px solid transparent;
+}
+
+.ticket-card.ticket-selected {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 1px rgba(0, 24, 146, 0.2);
+}
+
+.ticket-card:hover {
+  transform: translateY(-1px);
+}
+
+.ticket-content {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 12px;
-  background-color: var(--background-color);
-  border-radius: 8px;
-  box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.1);
-  margin-bottom: 12px;
-  overflow: hidden;
+  gap: 12px;
 }
 
 .ticket-info {
@@ -68,12 +127,12 @@ const emit = defineEmits(['toggle-selection', 'open-modal'])
   gap: 12px;
   overflow: hidden;
   flex: 1;
-  min-width: 0; /* Important for proper flex behavior */
+  min-width: 0;
 }
 
-.ticket-id {
-  white-space: nowrap;
+.ticket-id-tag {
   flex-shrink: 0;
+  font-family: 'Courier New', monospace;
   font-weight: 600;
 }
 
@@ -83,75 +142,38 @@ const emit = defineEmits(['toggle-selection', 'open-modal'])
   text-overflow: ellipsis;
   flex: 1;
   min-width: 0;
+  color: var(--text-color);
+  font-size: 14px;
+  line-height: 1.4;
 }
 
 .ticket-actions {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   flex-shrink: 0;
 }
 
-.action-btn {
-  width: 40px;
-  margin-left: 5px;
-  height: 36px;
-  font-size: 0.9rem;
-  background-color: var(--primary-color);
-  color: white;
-  border: none;
-  border-radius: 6px;
-  transition: background-color 0.3s ease, transform 0.1s ease;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  cursor: pointer;
+.time-btn {
+  min-width: 32px;
+  height: 32px;
 }
 
-.action-btn:hover {
-  background-color: var(--primary-color-hover);
-  transform: scale(1.05);
+.time-log-tag {
+  font-size: 11px;
+  white-space: nowrap;
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-input[type="checkbox"] {
-  appearance: none;
-  width: 20px;
-  height: 20px;
-  min-width: 20px;
-  min-height: 20px;
-  flex-shrink: 0;
-  border: 1px solid var(--primary-color);
-  border-radius: 50%;
-  outline: none;
-  cursor: pointer;
-  transition: background-color 0.3s ease, border-color 0.3s ease;
-  position: relative;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  margin: 0;
+/* Override Naive UI card padding for compact look */
+.ticket-card :deep(.n-card__content) {
+  padding: 12px 16px;
 }
 
-input[type="checkbox"]:checked {
-  background-color: var(--primary-color);
-  border-color: var(--primary-color);
-}
-
-input[type="checkbox"]:checked::before {
-  content: '';
-  width: 10px;
-  height: 10px;
-  background-color: white;
-  border-radius: 50%;
-}
-
-input[type="checkbox"]:hover {
-  border-color: var(--primary-color-hover);
-}
-
-.ticket-log {
-  font-size: 0.8rem;
-  color: var(--secondary-color);
-  font-weight: 500;
+/* Custom checkbox styling */
+.ticket-card :deep(.n-checkbox) {
+  --n-size: 20px;
 }
 </style> 

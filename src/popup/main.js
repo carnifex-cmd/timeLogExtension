@@ -2,6 +2,57 @@ import '@fortawesome/fontawesome-free/css/all.min.css';
 import '../styles/global.css';
 import './fonts.css';
 import { createApp } from 'vue'
+import {
+  // General
+  NConfigProvider,
+  NMessageProvider,
+  NDialogProvider,
+  NNotificationProvider,
+  // Components we'll use
+  NCard,
+  NButton,
+  NInput,
+  NCheckbox,
+  NModal,
+  NForm,
+  NFormItem,
+  NSpace,
+  NTag,
+  NEmpty,
+  NSpin,
+  NTooltip,
+  NGrid,
+  NGridItem,
+  // Create naive ui
+  create
+} from 'naive-ui'
+
 import App from './App.vue'
 
-createApp(App).mount('#app')
+// Create naive ui instance
+const naive = create({
+  components: [
+    NConfigProvider,
+    NMessageProvider,
+    NDialogProvider,
+    NNotificationProvider,
+    NCard,
+    NButton,
+    NInput,
+    NCheckbox,
+    NModal,
+    NForm,
+    NFormItem,
+    NSpace,
+    NTag,
+    NEmpty,
+    NSpin,
+    NTooltip,
+    NGrid,
+    NGridItem
+  ]
+})
+
+const app = createApp(App)
+app.use(naive)
+app.mount('#app')

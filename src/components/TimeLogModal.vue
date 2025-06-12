@@ -1,38 +1,103 @@
 <template>
-  <transition name="fade">
-    <div v-if="show" class="modal-bg" @click.self="$emit('close')">
-      <div class="modal">
-        <h4>Add Time to {{ ticketId }}</h4>
-        <form @submit.prevent="handleSave">
-          <input 
-            v-model="time" 
-            placeholder="Time (e.g. 1h 30m)" 
-            required 
-          />
-          <input 
-            v-model="date" 
-            type="date" 
-            required 
-          />
-          <textarea 
-            v-model="comment" 
-            placeholder="Comment (optional)"
-            rows="3"
-          ></textarea>
-          <div class="modal-buttons">
-            <button type="submit" class="save-btn">Save</button>
-            <button type="button" class="cancel-btn" @click="$emit('close')">
-              Cancel
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-  </transition>
+  <n-modal
+    v-model:show="modalShow"
+    preset="card"
+    :title="modalTitle"
+    size="medium"
+    :bordered="false"
+    :segmented="true"
+    @close="$emit('close')"
+  >
+    <template #header-extra>
+      <n-tag type="primary" size="small">
+        {{ ticketId }}
+      </n-tag>
+    </template>
+    
+    <n-form
+      ref="formRef"
+      :model="formData"
+      :rules="rules"
+      label-placement="top"
+      require-mark-placement="right-hanging"
+      size="medium"
+      @submit.prevent="handleSave"
+    >
+      <n-grid :cols="2" :x-gap="16">
+        <n-grid-item>
+          <n-form-item label="Time Spent" path="time">
+            <n-input
+              v-model:value="formData.time"
+              placeholder="e.g. 2h 30m, 1.5h, 90m"
+              clearable
+            >
+              <template #prefix>
+                <i class="fas fa-clock"></i>
+              </template>
+            </n-input>
+          </n-form-item>
+        </n-grid-item>
+        
+        <n-grid-item>
+          <n-form-item label="Date" path="date">
+            <n-input
+              v-model:value="formData.date"
+              type="date"
+              :max="todayDate"
+            >
+              <template #prefix>
+                <i class="fas fa-calendar"></i>
+              </template>
+            </n-input>
+          </n-form-item>
+        </n-grid-item>
+      </n-grid>
+      
+      <n-form-item label="Work Description" path="comment">
+        <n-input
+          v-model:value="formData.comment"
+          type="textarea"
+          placeholder="Describe what you worked on... (optional)"
+          :rows="3"
+          clearable
+          show-count
+          maxlength="500"
+        >
+        </n-input>
+      </n-form-item>
+    </n-form>
+    
+    <template #action>
+      <n-space justify="end">
+        <n-button
+          @click="$emit('close')"
+          size="medium"
+        >
+          <template #icon>
+            <i class="fas fa-times"></i>
+          </template>
+          Cancel
+        </n-button>
+        
+        <n-button
+          type="primary"
+          size="medium"
+          @click="handleSave"
+          :disabled="!isFormValid"
+          strong
+        >
+          <template #icon>
+            <i class="fas fa-save"></i>
+          </template>
+          Save Time Log
+        </n-button>
+      </n-space>
+    </template>
+  </n-modal>
 </template>
 
 <script setup>
-import { computed, defineProps, defineEmits } from 'vue'
+import { reactive, computed, watch, defineProps, defineEmits } from 'vue'
 
 const props = defineProps({
   show: Boolean,
@@ -44,24 +109,86 @@ const props = defineProps({
 
 const emit = defineEmits(['close', 'save', 'update:time', 'update:date', 'update:comment'])
 
-const time = computed({
-  get: () => props.time,
-  set: (value) => emit('update:time', value)
+const formData = reactive({
+  time: props.time || '',
+  date: props.date || getTodayDate(),
+  comment: props.comment || ''
 })
 
-const date = computed({
-  get: () => props.date,
-  set: (value) => emit('update:date', value)
+const modalShow = computed({
+  get: () => props.show,
+  set: (value) => {
+    if (!value) {
+      emit('close')
+    }
+  }
 })
 
-const comment = computed({
-  get: () => props.comment,
-  set: (value) => emit('update:comment', value)
+const modalTitle = computed(() => 
+  `⏱️ Log Time for ${props.ticketId || 'Ticket'}`
+)
+
+const todayDate = computed(() => getTodayDate())
+
+const isFormValid = computed(() => 
+  formData.time.trim() && formData.date.trim()
+)
+
+const rules = {
+  time: [
+    {
+      required: true,
+      message: 'Please enter time spent',
+      trigger: ['input', 'blur']
+    },
+    {
+      pattern: /^(\d+(\.\d+)?[hm]\s?)+$|^\d+(\.\d+)?h?\s?\d*m?$/i,
+      message: 'Please use format like "2h 30m", "1.5h", or "90m"',
+      trigger: ['input', 'blur']
+    }
+  ],
+  date: [
+    {
+      required: true,
+      message: 'Please select a date',
+      trigger: ['input', 'blur']
+    }
+  ]
+}
+
+function getTodayDate() {
+  return new Date().toISOString().split('T')[0]
+}
+
+// Watch for prop changes and update form data
+watch(() => props.time, (newValue) => {
+  formData.time = newValue || ''
+})
+
+watch(() => props.date, (newValue) => {
+  formData.date = newValue || getTodayDate()
+})
+
+watch(() => props.comment, (newValue) => {
+  formData.comment = newValue || ''
+})
+
+// Watch for form changes and emit updates
+watch(() => formData.time, (newValue) => {
+  emit('update:time', newValue)
+})
+
+watch(() => formData.date, (newValue) => {
+  emit('update:date', newValue)
+})
+
+watch(() => formData.comment, (newValue) => {
+  emit('update:comment', newValue)
 })
 
 const handleSave = () => {
-  if (!time.value || !date.value) {
-    alert('Please fill out both the time and date fields.')
+  if (!isFormValid.value) {
+    window.$message?.error('Please fill in all required fields')
     return
   }
   emit('save')
@@ -69,105 +196,31 @@ const handleSave = () => {
 </script>
 
 <style scoped>
-.fade-enter-active, 
-.fade-leave-active {
-  transition: opacity 0.3s ease;
+/* Custom modal styling */
+:deep(.n-card.n-modal) {
+  max-width: 500px;
+  width: 90vw;
 }
 
-.fade-enter-from, 
-.fade-leave-to {
-  opacity: 0;
+:deep(.n-card-header) {
+  padding-bottom: 16px;
 }
 
-.modal-bg {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  background-color: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-}
-
-.modal {
-  background-color: var(--white);
-  padding: 24px;
-  border-radius: 12px;
-  width: 100%;
-  max-width: 400px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  margin: 20px;
-}
-
-.modal h4 {
-  text-align: center;
-  margin-bottom: 20px;
+:deep(.n-form-item-label) {
+  font-weight: 500;
   color: var(--text-color);
 }
 
-form {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-input, 
-textarea {
-  padding: 10px;
-  border: 1px solid #ddd;
-  border-radius: 6px;
-  outline: none;
-  transition: border-color 0.3s ease, box-shadow 0.3s ease;
-  font-family: inherit;
+/* Enhanced textarea styling */
+:deep(.n-input--textarea .n-input__textarea) {
   resize: vertical;
+  min-height: 80px;
 }
 
-input:focus, 
-textarea:focus {
-  border-color: var(--primary-color);
-  box-shadow: 0 0 0 3px rgba(0, 24, 146, 0.1);
-}
-
-.modal-buttons {
-  display: flex;
-  gap: 12px;
-  margin-top: 8px;
-}
-
-.save-btn {
-  flex: 1;
-  padding: 10px 16px;
-  background-color: var(--primary-color);
-  color: white;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 1rem;
-  transition: background-color 0.3s ease, transform 0.1s ease;
-}
-
-.save-btn:hover {
-  background-color: var(--primary-color-hover);
-  transform: translateY(-1px);
-}
-
-.cancel-btn {
-  flex: 1;
-  padding: 10px 16px;
-  background-color: #6B7280;
-  color: white;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 1rem;
-  transition: background-color 0.3s ease, transform 0.1s ease;
-}
-
-.cancel-btn:hover {
-  background-color: #4B5563;
-  transform: translateY(-1px);
+/* Grid responsiveness */
+@media (max-width: 480px) {
+  :deep(.n-grid) {
+    grid-template-columns: 1fr !important;
+  }
 }
 </style> 
