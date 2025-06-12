@@ -1,17 +1,58 @@
 import { ref } from 'vue'
 import { storageService } from '../services/storageService.js'
+import { YouTrackOAuthService } from '../services/oauthService.js'
 
 export function useAuth() {
   const ytUrl = ref('')
   const ytToken = ref('')
+  const ytClientId = ref('')
+  const authType = ref('token') // 'token' or 'oauth'
   const isAuthenticated = ref(false)
+  const userInfo = ref(null)
+  const oauthTokens = ref(null)
 
   // Load auth from chrome.storage on initialization
   const loadAuth = async () => {
     try {
-      const data = await storageService.get(['ytUrl', 'ytToken'])
-      if (data.ytUrl && data.ytToken) {
+      const data = await storageService.get([
+        'ytUrl', 
+        'ytToken', 
+        'ytClientId', 
+        'authType', 
+        'userInfo', 
+        'oauthTokens'
+      ])
+      
+      if (data.ytUrl) {
         ytUrl.value = data.ytUrl
+      }
+
+      if (data.authType === 'oauth' && data.oauthTokens) {
+        authType.value = 'oauth'
+        oauthTokens.value = data.oauthTokens
+        ytClientId.value = data.ytClientId || ''
+        userInfo.value = data.userInfo
+        
+        // Check if OAuth token is still valid
+        const oauthService = new YouTrackOAuthService(ytUrl.value, ytClientId.value)
+        if (!oauthService.isTokenExpired(data.oauthTokens)) {
+          isAuthenticated.value = true
+          return true
+        } else {
+          // Try to refresh token
+          try {
+            const newTokens = await oauthService.refreshToken(data.oauthTokens.refresh_token)
+            oauthTokens.value = newTokens
+            await storageService.set({ oauthTokens: newTokens })
+            isAuthenticated.value = true
+            return true
+          } catch (error) {
+            console.error('Token refresh failed:', error)
+            await logout() // Clear invalid auth
+          }
+        }
+      } else if (data.authType === 'token' && data.ytToken) {
+        authType.value = 'token'
         ytToken.value = data.ytToken
         isAuthenticated.value = true
         return true
@@ -22,7 +63,7 @@ export function useAuth() {
     return false
   }
 
-  const saveAuth = async () => {
+  const saveTokenAuth = async () => {
     if (!ytUrl.value || !ytToken.value) {
       throw new Error('URL and token are required')
     }
@@ -30,28 +71,122 @@ export function useAuth() {
     try {
       await storageService.set({ 
         ytUrl: ytUrl.value, 
-        ytToken: ytToken.value 
+        ytToken: ytToken.value,
+        authType: 'token'
       })
+      
+      authType.value = 'token'
       isAuthenticated.value = true
       return true
     } catch (error) {
-      console.error('Error saving auth:', error)
+      console.error('Error saving token auth:', error)
       throw error
     }
   }
 
-  const logout = () => {
-    ytUrl.value = ''
-    ytToken.value = ''
-    isAuthenticated.value = false
+  const saveOAuthAuth = async () => {
+    if (!ytUrl.value || !ytClientId.value) {
+      throw new Error('URL and Client ID are required')
+    }
+
+    try {
+      const oauthService = new YouTrackOAuthService(ytUrl.value, ytClientId.value)
+      const tokens = await oauthService.authenticate()
+      
+      // Get user info
+      const user = await oauthService.getUserInfo(tokens.access_token)
+      
+      // Store OAuth data
+      await storageService.set({
+        ytUrl: ytUrl.value,
+        ytClientId: ytClientId.value,
+        authType: 'oauth',
+        oauthTokens: tokens,
+        userInfo: user
+      })
+
+      authType.value = 'oauth'
+      oauthTokens.value = tokens
+      userInfo.value = user
+      isAuthenticated.value = true
+      
+      return { tokens, user }
+    } catch (error) {
+      console.error('Error saving OAuth auth:', error)
+      throw error
+    }
+  }
+
+  const logout = async () => {
+    try {
+      // Revoke OAuth token if using OAuth
+      if (authType.value === 'oauth' && oauthTokens.value && ytClientId.value) {
+        const oauthService = new YouTrackOAuthService(ytUrl.value, ytClientId.value)
+        await oauthService.revokeToken(oauthTokens.value.access_token)
+      }
+
+      // Clear all auth data
+      await storageService.remove([
+        'ytToken', 
+        'ytClientId', 
+        'authType', 
+        'userInfo', 
+        'oauthTokens'
+      ])
+    } catch (error) {
+      console.error('Error during logout:', error)
+    } finally {
+      // Reset state
+      ytToken.value = ''
+      ytClientId.value = ''
+      authType.value = 'token'
+      isAuthenticated.value = false
+      userInfo.value = null
+      oauthTokens.value = null
+    }
+  }
+
+  const getCurrentAuthConfig = () => {
+    if (authType.value === 'oauth' && oauthTokens.value) {
+      return {
+        type: 'oauth',
+        token: oauthTokens.value.access_token,
+        refreshToken: oauthTokens.value.refresh_token,
+        clientId: ytClientId.value
+      }
+    } else {
+      return {
+        type: 'token',
+        token: ytToken.value
+      }
+    }
+  }
+
+  const switchAuthType = (newType) => {
+    authType.value = newType
+    // Clear previous auth data when switching
+    if (newType === 'oauth') {
+      ytToken.value = ''
+    } else {
+      ytClientId.value = ''
+      oauthTokens.value = null
+      userInfo.value = null
+    }
   }
 
   return {
     ytUrl,
     ytToken,
+    ytClientId,
+    authType,
     isAuthenticated,
+    userInfo,
+    oauthTokens,
     loadAuth,
-    saveAuth,
-    logout
+    saveTokenAuth,
+    saveOAuthAuth,
+    logout,
+    getCurrentAuthConfig,
+    switchAuthType
   }
 } 

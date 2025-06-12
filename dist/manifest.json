@@ -3,7 +3,10 @@
   "name": "YouTrack Multi-Ticket Time Logger",
   "version": "1.0",
   "description": "Log time into multiple YouTrack tickets simultaneously.",
-  "permissions": ["storage"],
+  "permissions": [
+    "storage",
+    "identity"
+  ],
   "host_permissions": ["<all_urls>"],
   "action": {
     "default_popup": "popup.html"

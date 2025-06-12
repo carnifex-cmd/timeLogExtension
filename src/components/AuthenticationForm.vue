@@ -1,63 +1,136 @@
 <template>
-  <n-card title="🔐 Authenticate" size="medium" class="auth-card">
+  <n-card title="🔐 Connect to YouTrack" size="medium" class="auth-card">
     <template #header-extra>
-      <n-tag type="info" size="small">YouTrack</n-tag>
+      <n-tag type="info" size="small">
+        {{ authType === 'oauth' ? 'OAuth 2.0' : 'API Token' }}
+      </n-tag>
     </template>
     
-    <n-form 
-      ref="formRef"
-      :model="formData"
-      :rules="rules"
-      label-placement="top"
-      require-mark-placement="right-hanging"
+    <!-- Authentication Method Tabs -->
+    <n-tabs 
+      v-model:value="authType" 
+      type="segment" 
       size="medium"
-      @submit.prevent="handleSubmit"
+      @update:value="handleAuthTypeChange"
     >
-      <n-form-item label="YouTrack Base URL" path="ytUrl">
-        <n-input
-          v-model:value="formData.ytUrl"
-          placeholder="https://your-company.youtrack.cloud"
-          clearable
-          :disabled="loading"
-        />
-      </n-form-item>
-      
-      <n-form-item label="API Token" path="ytToken">
-        <n-input
-          v-model:value="formData.ytToken"
-          type="password"
-          show-password-on="mousedown"
-          placeholder="Your YouTrack permanent token"
-          clearable
-          :disabled="loading"
-        />
-      </n-form-item>
-      
-      <n-form-item>
-        <n-button
-          type="primary"
+      <n-tab-pane name="token" tab="🔑 API Token">
+        <n-form 
+          ref="tokenFormRef"
+          :model="tokenFormData"
+          :rules="tokenRules"
+          label-placement="top"
+          require-mark-placement="right-hanging"
           size="medium"
-          :loading="loading"
-          :disabled="!formData.ytUrl || !formData.ytToken"
-          attr-type="submit"
-          block
-          strong
+          @submit.prevent="handleTokenSubmit"
         >
+          <n-form-item label="YouTrack Base URL" path="ytUrl">
+            <n-input
+              v-model:value="tokenFormData.ytUrl"
+              placeholder="https://your-company.youtrack.cloud"
+              clearable
+              :disabled="loading"
+            />
+          </n-form-item>
+          
+          <n-form-item label="Permanent Token" path="ytToken">
+            <n-input
+              v-model:value="tokenFormData.ytToken"
+              type="password"
+              show-password-on="mousedown"
+              placeholder="perm:your-permanent-token"
+              clearable
+              :disabled="loading"
+            />
+          </n-form-item>
+          
+          <n-form-item>
+            <n-button
+              type="primary"
+              size="medium"
+              :loading="loading"
+              :disabled="!isTokenFormValid"
+              attr-type="submit"
+              block
+              strong
+            >
+              <template #icon>
+                <i class="fas fa-key"></i>
+              </template>
+              {{ loading ? 'Connecting...' : 'Connect with Token' }}
+            </n-button>
+          </n-form-item>
+        </n-form>
+        
+        <n-alert type="info" size="small" class="auth-info">
           <template #icon>
-            <i class="fas fa-key"></i>
+            <i class="fas fa-info-circle"></i>
           </template>
-          {{ loading ? 'Connecting...' : 'Connect to YouTrack' }}
-        </n-button>
-      </n-form-item>
-    </n-form>
+          Need a token? Go to YouTrack → Profile → Authentication → New Token
+        </n-alert>
+      </n-tab-pane>
+      
+      <n-tab-pane name="oauth" tab="🌐 OAuth 2.0">
+        <n-form 
+          ref="oauthFormRef"
+          :model="oauthFormData"
+          :rules="oauthRules"
+          label-placement="top"
+          require-mark-placement="right-hanging"
+          size="medium"
+          @submit.prevent="handleOAuthSubmit"
+        >
+          <n-form-item label="YouTrack Base URL" path="ytUrl">
+            <n-input
+              v-model:value="oauthFormData.ytUrl"
+              placeholder="https://your-company.youtrack.cloud"
+              clearable
+              :disabled="loading"
+            />
+          </n-form-item>
+          
+          <n-form-item label="OAuth Client ID" path="ytClientId">
+            <n-input
+              v-model:value="oauthFormData.ytClientId"
+              placeholder="your-oauth-client-id"
+              clearable
+              :disabled="loading"
+            />
+          </n-form-item>
+          
+          <n-form-item>
+            <n-button
+              type="primary"
+              size="medium"
+              :loading="loading"
+              :disabled="!isOAuthFormValid"
+              attr-type="submit"
+              block
+              strong
+            >
+              <template #icon>
+                <i class="fas fa-sign-in-alt"></i>
+              </template>
+              {{ loading ? 'Redirecting...' : 'Connect with OAuth' }}
+            </n-button>
+          </n-form-item>
+        </n-form>
+        
+        <n-alert type="info" size="small" class="auth-info">
+          <template #icon>
+            <i class="fas fa-shield-alt"></i>
+          </template>
+          OAuth provides secure authentication without sharing permanent tokens
+        </n-alert>
+      </n-tab-pane>
+    </n-tabs>
     
     <template #footer>
       <n-space justify="center">
         <n-tag size="tiny" type="warning">
           <template #icon>
-            <i class="fas fa-info-circle"></i>
+            <i class="fas fa-lock"></i>
           </template>
-          Your credentials are stored locally
+          Your credentials are stored locally and encrypted
         </n-tag>
       </n-space>
     </template>
@@ -65,22 +138,44 @@
 </template>
 
 <script setup>
-import { reactive, watch, defineProps, defineEmits } from 'vue'
+import { reactive, computed, watch, defineProps, defineEmits } from 'vue'
 
 const props = defineProps({
   ytUrl: String,
   ytToken: String,
+  ytClientId: String,
+  authType: {
+    type: String,
+    default: 'token'
+  },
   loading: Boolean
 })
 
-const emit = defineEmits(['save', 'update:ytUrl', 'update:ytToken'])
+const emit = defineEmits([
+  'save-token', 
+  'save-oauth', 
+  'update:ytUrl', 
+  'update:ytToken', 
+  'update:ytClientId',
+  'update:authType'
+])
 
-const formData = reactive({
+const authType = computed({
+  get: () => props.authType,
+  set: (value) => emit('update:authType', value)
+})
+
+const tokenFormData = reactive({
   ytUrl: props.ytUrl || '',
   ytToken: props.ytToken || ''
 })
 
-const rules = {
+const oauthFormData = reactive({
+  ytUrl: props.ytUrl || '',
+  ytClientId: props.ytClientId || ''
+})
+
+const tokenRules = {
   ytUrl: [
     {
       required: true,
@@ -96,37 +191,95 @@ const rules = {
   ytToken: [
     {
       required: true,
-      message: 'Please enter your API token',
+      message: 'Please enter your permanent token',
       trigger: ['input', 'blur']
     },
     {
       min: 10,
-      message: 'API token seems too short',
+      message: 'Token seems too short',
       trigger: ['input', 'blur']
     }
   ]
 }
 
+const oauthRules = {
+  ytUrl: [
+    {
+      required: true,
+      message: 'Please enter your YouTrack URL',
+      trigger: ['input', 'blur']
+    },
+    {
+      pattern: /^https?:\/\/.+/,
+      message: 'Please enter a valid URL (starting with http:// or https://)',
+      trigger: ['input', 'blur']
+    }
+  ],
+  ytClientId: [
+    {
+      required: true,
+      message: 'Please enter your OAuth Client ID',
+      trigger: ['input', 'blur']
+    },
+    {
+      min: 5,
+      message: 'Client ID seems too short',
+      trigger: ['input', 'blur']
+    }
+  ]
+}
+
+const isTokenFormValid = computed(() => 
+  tokenFormData.ytUrl.trim() && tokenFormData.ytToken.trim()
+)
+
+const isOAuthFormValid = computed(() => 
+  oauthFormData.ytUrl.trim() && oauthFormData.ytClientId.trim()
+)
+
 // Watch for changes and emit updates
-watch(() => formData.ytUrl, (newValue) => {
+watch(() => tokenFormData.ytUrl, (newValue) => {
+  oauthFormData.ytUrl = newValue // Keep URLs in sync
   emit('update:ytUrl', newValue)
 })
 
-watch(() => formData.ytToken, (newValue) => {
+watch(() => oauthFormData.ytUrl, (newValue) => {
+  tokenFormData.ytUrl = newValue // Keep URLs in sync
+  emit('update:ytUrl', newValue)
+})
+
+watch(() => tokenFormData.ytToken, (newValue) => {
   emit('update:ytToken', newValue)
+})
+
+watch(() => oauthFormData.ytClientId, (newValue) => {
+  emit('update:ytClientId', newValue)
 })
 
 // Update form data when props change
 watch(() => props.ytUrl, (newValue) => {
-  formData.ytUrl = newValue || ''
+  tokenFormData.ytUrl = newValue || ''
+  oauthFormData.ytUrl = newValue || ''
 })
 
 watch(() => props.ytToken, (newValue) => {
-  formData.ytToken = newValue || ''
+  tokenFormData.ytToken = newValue || ''
 })
 
-const handleSubmit = () => {
-  emit('save')
+watch(() => props.ytClientId, (newValue) => {
+  oauthFormData.ytClientId = newValue || ''
+})
+
+const handleAuthTypeChange = (newType) => {
+  emit('update:authType', newType)
+}
+
+const handleTokenSubmit = () => {
+  emit('save-token')
+}
+
+const handleOAuthSubmit = () => {
+  emit('save-oauth')
 }
 </script>
 
@@ -143,5 +296,17 @@ const handleSubmit = () => {
 .auth-card :deep(.n-form-item-label) {
   font-weight: 500;
   color: var(--text-color);
+}
+
+.auth-info {
+  margin-top: 16px;
+}
+
+.auth-card :deep(.n-tabs-nav) {
+  margin-bottom: 20px;
+}
+
+.auth-card :deep(.n-tab-pane) {
+  padding-top: 8px;
 }
 </style> 

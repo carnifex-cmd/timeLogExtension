@@ -17,10 +17,10 @@ export function useTickets() {
     )
   })
 
-  const fetchTickets = async (ytUrl, ytToken) => {
+  const fetchTickets = async (ytUrl, authConfig) => {
     loading.value = true
     try {
-      const api = new YouTrackApi(ytUrl, ytToken)
+      const api = new YouTrackApi(ytUrl, authConfig)
       const data = await api.fetchTickets()
       tickets.value = data
     } catch (error) {
@@ -35,7 +35,7 @@ export function useTickets() {
     logs[ticketId] = timeLog
   }
 
-  const submitLogs = async (ytUrl, ytToken) => {
+  const submitLogs = async (ytUrl, authConfig) => {
     const selectedIds = Object.keys(selectedTickets).filter(id => selectedTickets[id])
     if (!selectedIds.length) {
       throw new Error('Select at least one ticket.')
@@ -43,7 +43,7 @@ export function useTickets() {
 
     loading.value = true
     try {
-      const api = new YouTrackApi(ytUrl, ytToken)
+      const api = new YouTrackApi(ytUrl, authConfig)
       
       for (const ticketId of selectedIds) {
         const log = logs[ticketId]
@@ -67,6 +67,16 @@ export function useTickets() {
     }
   }
 
+  const testConnection = async (ytUrl, authConfig) => {
+    try {
+      const api = new YouTrackApi(ytUrl, authConfig)
+      return await api.testConnection()
+    } catch (error) {
+      console.error('Error testing connection:', error)
+      throw error
+    }
+  }
+
   const showMoreTickets = () => {
     ticketsToShow.value += 5
   }
@@ -82,6 +92,7 @@ export function useTickets() {
     fetchTickets,
     addTimeLog,
     submitLogs,
+    testConnection,
     showMoreTickets
   }
 } 
