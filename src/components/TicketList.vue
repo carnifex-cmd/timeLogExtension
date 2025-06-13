@@ -57,9 +57,11 @@
             :key="ticket.idReadable"
             :ticket="ticket"
             :is-selected="selectedTickets[ticket.idReadable] || false"
+            :is-bookmarked="bookmarkedTickets && bookmarkedTickets[ticket.idReadable] || false"
             :time-log="logs[ticket.idReadable]"
             @toggle-selection="handleToggleSelection"
             @open-modal="handleOpenModal"
+            @toggle-bookmark="handleToggleBookmark"
           />
         </div>
         
@@ -111,13 +113,15 @@ const props = defineProps({
   logs: Object,
   loading: Boolean,
   searchQuery: String,
-  ticketsToShow: Number
+  ticketsToShow: Number,
+  bookmarkedTickets: Object
 })
 
 const emit = defineEmits([
   'update:searchQuery',
   'toggle-selection', 
   'open-modal', 
+  'toggle-bookmark',
   'show-more', 
   'submit-logs'
 ])
@@ -149,6 +153,10 @@ const handleToggleSelection = (ticketId) => {
 
 const handleOpenModal = (ticketId) => {
   emit('open-modal', ticketId)
+}
+
+const handleToggleBookmark = (ticket) => {
+  emit('toggle-bookmark', ticket)
 }
 </script>
 

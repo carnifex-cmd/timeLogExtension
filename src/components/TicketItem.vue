@@ -33,6 +33,18 @@
       
       <div class="ticket-actions">
         <n-button
+          :type="isBookmarked ? 'warning' : 'default'"
+          size="small"
+          circle
+          @click="$emit('toggle-bookmark', ticket)"
+          class="bookmark-btn"
+        >
+          <template #icon>
+            <i :class="isBookmarked ? 'fas fa-star' : 'far fa-star'"></i>
+          </template>
+        </n-button>
+        
+        <n-button
           type="primary"
           size="small"
           circle
@@ -80,10 +92,14 @@ const props = defineProps({
   timeLog: {
     type: Object,
     default: null
+  },
+  isBookmarked: {
+    type: Boolean,
+    default: false
   }
 })
 
-const emit = defineEmits(['toggle-selection', 'open-modal'])
+const emit = defineEmits(['toggle-selection', 'open-modal', 'toggle-bookmark'])
 
 const summaryRef = ref(null)
 const isSummaryTruncated = ref(false)
@@ -164,9 +180,18 @@ onMounted(() => {
   flex-shrink: 0;
 }
 
+.bookmark-btn,
 .time-btn {
   min-width: 32px;
   height: 32px;
+}
+
+.bookmark-btn {
+  transition: all 0.3s ease;
+}
+
+.bookmark-btn:hover {
+  transform: scale(1.1);
 }
 
 .time-log-tag {

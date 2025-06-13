@@ -41,12 +41,27 @@
       </n-space>
     </n-card>
 
+    <!-- Bookmark Management -->
+    <BookmarkList
+      v-if="auth.isAuthenticated.value"
+      :bookmarked-tickets="bookmarks.bookmarkedTicketsList.value"
+      :selected-tickets="tickets.selectedTickets"
+      :logs="tickets.logs"
+      :loading="bookmarks.loading.value"
+      @toggle-selection="handleToggleSelection"
+      @open-modal="handleOpenModal"
+      @toggle-bookmark="handleToggleBookmark"
+      @show-more="showMoreBookmarks"
+      @clear-all="handleClearAllBookmarks"
+    />
+
     <!-- Ticket Management -->
     <TicketList
       v-if="auth.isAuthenticated.value"
       :tickets="tickets.tickets.value"
       :filtered-tickets="tickets.filteredTickets.value"
       :selected-tickets="tickets.selectedTickets"
+      :bookmarked-tickets="bookmarks.bookmarkedTickets"
       :logs="tickets.logs"
       :loading="tickets.loading.value"
       :search-query="tickets.searchQuery.value"
@@ -54,6 +69,7 @@
       @update:search-query="tickets.searchQuery.value = $event"
       @toggle-selection="handleToggleSelection"
       @open-modal="handleOpenModal"
+      @toggle-bookmark="handleToggleBookmark"
       @show-more="tickets.showMoreTickets"
       @submit-logs="handleSubmitLogs"
     />
@@ -78,10 +94,12 @@
 import { onMounted } from 'vue'
 import { useMessage, useDialog, useNotification } from 'naive-ui'
 import AuthenticationForm from '../components/AuthenticationForm.vue'
+import BookmarkList from '../components/BookmarkList.vue'
 import TicketList from '../components/TicketList.vue'
 import TimeLogModal from '../components/TimeLogModal.vue'
 import { useAuth } from '../composables/useAuth.js'
 import { useTickets } from '../composables/useTickets.js'
+import { useBookmarks } from '../composables/useBookmarks.js'
 import { useModal } from '../composables/useModal.js'
 
 // Initialize Naive UI composables (now inside provider context)
@@ -92,13 +110,16 @@ const notification = useNotification()
 // Initialize composables
 const auth = useAuth()
 const tickets = useTickets()
+const bookmarks = useBookmarks()
 const modal = useModal()
 
 // Load authentication on mount
 onMounted(async () => {
   const isAuthenticated = await auth.loadAuth()
   if (isAuthenticated) {
-    await loadTickets()
+    await Promise.all([loadTickets(), bookmarks.loadBookmarks()])
+  } else {
+    await bookmarks.loadBookmarks()
   }
 })
 
@@ -200,6 +221,42 @@ const handleSubmitLogs = async () => {
       duration: 5000
     })
   }
+}
+
+// Bookmark handlers
+const handleToggleBookmark = async (ticket) => {
+  try {
+    const wasBookmarked = await bookmarks.toggleBookmark(ticket)
+    if (wasBookmarked) {
+      message.success(`Bookmarked ${ticket.idReadable}`)
+    } else {
+      message.info(`Removed bookmark for ${ticket.idReadable}`)
+    }
+  } catch (error) {
+    message.error('Failed to update bookmark: ' + error.message)
+  }
+}
+
+const showMoreBookmarks = () => {
+  // Implementation for showing more bookmarks if needed
+  // For now, we'll keep it simple and show all
+}
+
+const handleClearAllBookmarks = () => {
+  dialog.warning({
+    title: 'Clear All Bookmarks',
+    content: 'Are you sure you want to remove all bookmarked tickets? This action cannot be undone.',
+    positiveText: 'Clear All',
+    negativeText: 'Cancel',
+    onPositiveClick: async () => {
+      try {
+        await bookmarks.clearAllBookmarks()
+        message.success('All bookmarks cleared')
+      } catch (error) {
+        message.error('Failed to clear bookmarks: ' + error.message)
+      }
+    }
+  })
 }
 
 // Modal handlers
