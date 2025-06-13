@@ -53,7 +53,12 @@
           <template #icon>
             <i class="fas fa-check-circle"></i>
           </template>
-          {{ timeLog.time }} on {{ formatDate(timeLog.date) }}
+          <template v-if="isValidDate(timeLog.date)">
+            {{ timeLog.time }} on {{ formatDate(timeLog.date) }}
+          </template>
+          <template v-else>
+            log added
+          </template>
         </n-tag>
       </div>
     </div>
@@ -88,6 +93,11 @@ const formatDate = (dateString) => {
     month: 'short',
     day: 'numeric'
   })
+}
+
+const isValidDate = (dateString) => {
+  const d = new Date(dateString)
+  return d instanceof Date && !isNaN(d)
 }
 
 onMounted(() => {

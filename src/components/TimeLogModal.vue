@@ -46,6 +46,8 @@
               :max="todayDate"
               clearable
               :shortcuts="dateShortcuts"
+              to="body"
+              :panel-cols="1"
             >
               <template #prefix>
                 <i class="fas fa-calendar"></i>

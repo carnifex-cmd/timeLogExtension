@@ -9,8 +9,9 @@ body {
   background-color: var(--background-color);
   color: var(--text-color);
   margin: 0;
+  border-radius: var(--border-radius-lg);
   padding: var(--spacing-xl);
-  width: 500px;
+  width: 600px;
 }
 
 h1, h2, h3, h4, h5, h6 {
@@ -119,4 +120,10 @@ h1, h2, h3, h4, h5, h6 {
 .gap-1 { gap: var(--spacing-xs); }
 .gap-2 { gap: var(--spacing-sm); }
 .gap-3 { gap: var(--spacing-md); }
-.gap-4 { gap: var(--spacing-lg); } 
+.gap-4 { gap: var(--spacing-lg); }
+
+html, body, #app {
+  overflow: visible !important;
+  height: auto !important;
+  min-height: 100vh;
+} 
