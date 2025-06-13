@@ -3,6 +3,7 @@ import { storageService } from '../services/storageService.js'
 
 export function useBookmarks() {
   const bookmarkedTickets = reactive({})
+  const bookMarksToShow = ref(3)
   const loading = ref(false)
 
   // Load bookmarks from storage
@@ -91,15 +92,21 @@ export function useBookmarks() {
     }
   }
 
+  const showMoreBookmarks = () => {
+    bookMarksToShow.value += 2
+  }
+
   return {
     bookmarkedTickets,
     bookmarkedTicketsList,
     loading,
+    bookMarksToShow,
     loadBookmarks,
     addBookmark,
     removeBookmark,
     toggleBookmark,
     isBookmarked,
-    clearAllBookmarks
+    clearAllBookmarks,
+    showMoreBookmarks
   }
 } 

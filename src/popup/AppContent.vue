@@ -46,12 +46,13 @@
       v-if="auth.isAuthenticated.value"
       :bookmarked-tickets="bookmarks.bookmarkedTicketsList.value"
       :selected-tickets="tickets.selectedTickets"
+      :bookmarks-to-show="bookmarks.bookMarksToShow.value"
       :logs="tickets.logs"
       :loading="bookmarks.loading.value"
       @toggle-selection="handleToggleSelection"
       @open-modal="handleOpenModal"
       @toggle-bookmark="handleToggleBookmark"
-      @show-more="showMoreBookmarks"
+      @show-more="bookmarks.showMoreBookmarks"
       @clear-all="handleClearAllBookmarks"
     />
 
@@ -237,10 +238,6 @@ const handleToggleBookmark = async (ticket) => {
   }
 }
 
-const showMoreBookmarks = () => {
-  // Implementation for showing more bookmarks if needed
-  // For now, we'll keep it simple and show all
-}
 
 const handleClearAllBookmarks = () => {
   dialog.warning({
