@@ -39,16 +39,18 @@
         </n-grid-item>
         
         <n-grid-item>
-          <n-form-item label="Date" path="date">
-            <n-input
-              v-model:value="formData.date"
-              type="date"
+          <n-form-item label="Date Range" path="dateRange">
+            <n-date-picker
+              v-model:value="formData.dateRange"
+              type="daterange"
               :max="todayDate"
+              clearable
+              :shortcuts="dateShortcuts"
             >
               <template #prefix>
                 <i class="fas fa-calendar"></i>
               </template>
-            </n-input>
+            </n-date-picker>
           </n-form-item>
         </n-grid-item>
       </n-grid>
@@ -65,6 +67,18 @@
         >
         </n-input>
       </n-form-item>
+
+      <n-alert v-if="selectedDates.length > 0" type="info" title="Selected Dates">
+        <template #icon>
+          <i class="fas fa-info-circle"></i>
+        </template>
+        Time will be logged for {{ selectedDates.length }} day(s):
+        <n-space vertical>
+          <n-tag v-for="date in selectedDates" :key="date" type="info" size="small">
+            {{ formatDate(date) }}
+          </n-tag>
+        </n-space>
+      </n-alert>
     </n-form>
     
     <template #action>
@@ -97,7 +111,7 @@
 </template>
 
 <script setup>
-import { reactive, computed, watch, defineProps, defineEmits } from 'vue'
+import { reactive, computed, watch, defineProps, defineEmits, ref } from 'vue'
 
 const props = defineProps({
   show: Boolean,
@@ -109,9 +123,10 @@ const props = defineProps({
 
 const emit = defineEmits(['close', 'save', 'update:time', 'update:date', 'update:comment'])
 
+const formRef = ref(null)
 const formData = reactive({
   time: props.time || '',
-  date: props.date || getTodayDate(),
+  dateRange: null,
   comment: props.comment || ''
 })
 
@@ -128,11 +143,54 @@ const modalTitle = computed(() =>
   `⏱️ Log Time for ${props.ticketId || 'Ticket'}`
 )
 
-const todayDate = computed(() => getTodayDate())
+const todayDate = computed(() => new Date().getTime())
+
+const selectedDates = computed(() => {
+  if (!formData.dateRange || !Array.isArray(formData.dateRange) || formData.dateRange.length !== 2) return []
+  const [start, end] = formData.dateRange
+  if (typeof start !== 'number' || typeof end !== 'number') return []
+  const dates = []
+  const currentDate = new Date(start)
+  const endDate = new Date(end)
+  // Remove time part for comparison
+  currentDate.setHours(0,0,0,0)
+  endDate.setHours(0,0,0,0)
+  while (currentDate <= endDate) {
+    dates.push(new Date(currentDate))
+    currentDate.setDate(currentDate.getDate() + 1)
+  }
+  return dates
+})
 
 const isFormValid = computed(() => 
-  formData.time.trim() && formData.date.trim()
+  formData.time.trim() &&
+  Array.isArray(formData.dateRange) &&
+  formData.dateRange.length === 2 &&
+  typeof formData.dateRange[0] === 'number' &&
+  typeof formData.dateRange[1] === 'number' &&
+  selectedDates.value.length > 0
 )
+
+const dateShortcuts = {
+  'Last 7 days': () => {
+    const end = new Date()
+    const start = new Date()
+    start.setDate(start.getDate() - 6)
+    return [start.getTime(), end.getTime()]
+  },
+  'Last 30 days': () => {
+    const end = new Date()
+    const start = new Date()
+    start.setDate(start.getDate() - 29)
+    return [start.getTime(), end.getTime()]
+  },
+  'This week': () => {
+    const end = new Date()
+    const start = new Date()
+    start.setDate(start.getDate() - start.getDay())
+    return [start.getTime(), end.getTime()]
+  }
+}
 
 const rules = {
   time: [
@@ -147,26 +205,29 @@ const rules = {
       trigger: ['input', 'blur']
     }
   ],
-  date: [
+  dateRange: [
     {
-      required: true,
-      message: 'Please select a date',
+      validator (rule, value) {
+        return Array.isArray(value) && value.length === 2 && typeof value[0] === 'number' && typeof value[1] === 'number';
+      },
+      message: 'Please select a date range',
       trigger: ['input', 'blur']
     }
   ]
 }
 
-function getTodayDate() {
-  return new Date().toISOString().split('T')[0]
+function formatDate(date) {
+  return new Date(date).toLocaleDateString('en-US', {
+    weekday: 'short',
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric'
+  })
 }
 
 // Watch for prop changes and update form data
 watch(() => props.time, (newValue) => {
   formData.time = newValue || ''
-})
-
-watch(() => props.date, (newValue) => {
-  formData.date = newValue || getTodayDate()
 })
 
 watch(() => props.comment, (newValue) => {
@@ -178,27 +239,32 @@ watch(() => formData.time, (newValue) => {
   emit('update:time', newValue)
 })
 
-watch(() => formData.date, (newValue) => {
-  emit('update:date', newValue)
-})
-
 watch(() => formData.comment, (newValue) => {
   emit('update:comment', newValue)
 })
 
 const handleSave = () => {
-  if (!isFormValid.value) {
-    window.$message?.error('Please fill in all required fields')
-    return
-  }
-  emit('save')
+  if (!formRef.value) return
+  formRef.value.validate((errors) => {
+    if (errors) {
+      window.$message?.error('Please fill out both the time and date fields.')
+      return
+    }
+    // Create an array of time log entries for each date
+    const timeLogs = selectedDates.value.map(date => ({
+      date: date.toISOString().split('T')[0],
+      time: formData.time,
+      comment: formData.comment
+    }))
+    emit('save', timeLogs)
+  })
 }
 </script>
 
 <style scoped>
 /* Custom modal styling */
 :deep(.n-card.n-modal) {
-  max-width: 500px;
+  max-width: 600px;
   width: 90vw;
 }
 
@@ -222,5 +288,10 @@ const handleSave = () => {
   :deep(.n-grid) {
     grid-template-columns: 1fr !important;
   }
+}
+
+/* Date range picker styling */
+:deep(.n-date-picker) {
+  width: 100%;
 }
 </style> 

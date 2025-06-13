@@ -208,13 +208,16 @@ const handleOpenModal = (ticketId) => {
   modal.openModal(ticketId, existingLog)
 }
 
-const handleModalSave = () => {
+const handleModalSave = (timeLogs) => {
   try {
-    modal.validateModal()
-    const timeLog = modal.getModalData()
-    tickets.addTimeLog(modal.modal.ticketId, timeLog)
+    if (!Array.isArray(timeLogs) || timeLogs.length === 0) {
+      throw new Error('No time logs to save.')
+    }
+    // Save each time log for the ticket
+    timeLogs.forEach(timeLog => {
+      tickets.addTimeLog(modal.modal.ticketId, timeLog)
+    })
     modal.closeModal()
-    
     message.success(`Time logged for ${modal.modal.ticketId}`)
   } catch (error) {
     message.error(error.message)

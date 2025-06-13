@@ -32,7 +32,10 @@ export function useTickets() {
   }
 
   const addTimeLog = (ticketId, timeLog) => {
-    logs[ticketId] = timeLog
+    if (!Array.isArray(logs[ticketId])) {
+      logs[ticketId] = []
+    }
+    logs[ticketId].push(timeLog)
   }
 
   const submitLogs = async (ytUrl, authConfig) => {
@@ -46,10 +49,11 @@ export function useTickets() {
       const api = new YouTrackApi(ytUrl, authConfig)
       
       for (const ticketId of selectedIds) {
-        const log = logs[ticketId]
-        if (!log) continue
-        
-        await api.submitTimeLog(ticketId, log)
+        const ticketLogs = logs[ticketId]
+        if (!Array.isArray(ticketLogs) || ticketLogs.length === 0) continue
+        for (const log of ticketLogs) {
+          await api.submitTimeLog(ticketId, log)
+        }
       }
       
       // Clear selections and logs after successful submission
