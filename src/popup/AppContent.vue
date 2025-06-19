@@ -302,8 +302,12 @@ const handleModalSave = (timeLogs) => {
     timeLogs.forEach(timeLog => {
       tickets.addTimeLog(modal.modal.ticketId, timeLog)
     })
+    
+    // Automatically select the ticket when a time log is added
+    tickets.selectedTickets[modal.modal.ticketId] = true
+    
     modal.closeModal()
-    message.success(`Time logged for ${modal.modal.ticketId}`)
+    message.success(`Time logged for ${modal.modal.ticketId} and automatically selected`)
   } catch (error) {
     message.error(error.message)
   }
@@ -337,18 +341,15 @@ const handleModalSave = (timeLogs) => {
   border: none;
   color: white;
   font-weight: 500;
-  /* box-shadow: 0 2px 8px rgba(238, 90, 82, 0.3); */
   transition: all 0.3s ease;
 }
 
 .logout-button:hover {
   background: linear-gradient(135deg, #ff5252, #e53935);
-  /* box-shadow: 0 4px 12px rgba(238, 90, 82, 0.4); */
   transform: translateY(-1px);
 }
 
 .logout-button:active {
   transform: translateY(0);
-  /* box-shadow: 0 2px 6px rgba(238, 90, 82, 0.3); */
 }
 </style> 
