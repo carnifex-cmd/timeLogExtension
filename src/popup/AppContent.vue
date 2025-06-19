@@ -7,13 +7,16 @@
       :ytToken="auth.ytToken.value"
       :ytClientId="auth.ytClientId.value"
       :authType="auth.authType.value"
+      :ytEnvironment="auth.ytEnvironment.value"
       :loading="tickets.loading.value"
       @save-token="handleTokenAuth"
       @save-oauth="handleOAuthAuth"
+      @save-youtrack-token="handleYouTrackTokenAuth"
       @update:ytUrl="auth.ytUrl.value = $event"
       @update:ytToken="auth.ytToken.value = $event"
       @update:ytClientId="auth.ytClientId.value = $event"
       @update:authType="auth.switchAuthType($event)"
+      @update:ytEnvironment="auth.ytEnvironment.value = $event"
     />
 
     <!-- User Info Banner (for OAuth) -->
@@ -155,6 +158,36 @@ const handleOAuthAuth = async () => {
       message.info('OAuth authentication was cancelled')
     } else {
       message.error('OAuth authentication failed: ' + error.message)
+    }
+  }
+}
+
+const handleYouTrackTokenAuth = async () => {
+  try {
+    console.log('Starting YouTrack token authentication...');
+    const result = await auth.saveYouTrackTokenAuth()
+    await loadTickets()
+    
+    const userDisplayName = result.user?.name || result.user?.login || 'User'
+    const tokenTypeDisplay = result.tokenType === 'ring-jwt' ? 'JWT Token' : 
+                           result.tokenType === 'uuid-access-token' ? 'Access Token' :
+                           'Session Token'
+    
+    notification.success({
+      title: '🔍 Auto-Detected!',
+      description: `Successfully connected to ${result.environment} using ${tokenTypeDisplay}${result.user ? ` as ${userDisplayName}` : ''}`,
+      duration: 4000
+    })
+  } catch (error) {
+    console.error('YouTrack token auth error:', error);
+    if (error.message.includes('No YouTrack tabs found')) {
+      message.warning('Please open YouTrack in a browser tab first, then try again.')
+    } else if (error.message.includes('No authentication tokens found')) {
+      message.warning('Please make sure you are logged into YouTrack, then try again.')
+    } else if (error.message.includes('Could not establish connection')) {
+      message.error('Extension could not connect to YouTrack tab. Please refresh the YouTrack page and try again.')
+    } else {
+      message.error('Auto-detection failed: ' + error.message)
     }
   }
 }

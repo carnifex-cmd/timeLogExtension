@@ -10,6 +10,18 @@ export class YouTrackApi {
   getAuthHeader() {
     if (this.authConfig.type === 'oauth') {
       return `Bearer ${this.authConfig.token}`
+    } else if (this.authConfig.type === 'youtrack-token') {
+      // YouTrack tokens might use different auth schemes
+      const token = this.authConfig.token
+      // Check if it's a JWT token (starts with 'eyJ')
+      if (token.startsWith('eyJ')) {
+        return `Bearer ${token}`
+      } else if (token.startsWith('perm:')) {
+        return `Bearer ${token}`
+      } else {
+        // For session-based auth, might need different headers
+        return `Bearer ${token}`
+      }
     } else {
       return `Bearer ${this.authConfig.token}`
     }
@@ -23,6 +35,12 @@ export class YouTrackApi {
       'Accept': 'application/json',
       'Authorization': this.getAuthHeader(),
       ...options.headers
+    }
+
+    // For YouTrack token auth, we might need additional headers
+    if (this.authConfig.type === 'youtrack-token') {
+      // Some YouTrack setups might require specific headers
+      headers['X-Requested-With'] = 'XMLHttpRequest'
     }
 
     let response = await fetch(url, {
@@ -45,6 +63,9 @@ export class YouTrackApi {
         console.error('Token refresh failed:', refreshError)
         throw new Error('Authentication expired. Please login again.')
       }
+    } else if (response.status === 401 && this.authConfig.type === 'youtrack-token') {
+      // For YouTrack token auth, we can't refresh, so user needs to re-authenticate
+      throw new Error('YouTrack authentication expired. Please log into YouTrack again and use auto-detect.')
     }
 
     return response

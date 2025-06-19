@@ -2,7 +2,11 @@
   <n-card title="🔐 Connect to YouTrack" size="medium" class="auth-card">
     <template #header-extra>
       <n-tag type="info" size="small">
-        {{ authType === 'oauth' ? 'OAuth 2.0' : 'API Token' }}
+        {{ 
+          authType === 'oauth' ? 'OAuth 2.0' : 
+          authType === 'youtrack-token' ? 'Auto-Detected' : 
+          'API Token' 
+        }}
       </n-tag>
     </template>
     
@@ -67,6 +71,66 @@
           </template>
           Need a token? Go to YouTrack → Profile → Authentication → New Token
         </n-alert>
+      </n-tab-pane>
+      
+      <n-tab-pane name="youtrack-token" tab="🔍 Auto-Detect">
+        <div class="auto-detect-content">
+          <n-alert type="info" size="medium" class="auth-info">
+            <template #icon>
+              <i class="fas fa-magic"></i>
+            </template>
+            <div>
+              <div style="font-weight: 500; margin-bottom: 8px;">Automatic Token Detection</div>
+              <div>This will automatically detect and use your authentication from any open YouTrack tab.</div>
+            </div>
+          </n-alert>
+
+          <n-form @submit.prevent="handleYouTrackTokenSubmit">
+            <n-form-item label="Environment" path="environment">
+              <n-radio-group v-model:value="selectedEnvironment" size="medium">
+                <n-space vertical>
+                  <n-radio value="production">
+                    <i class="fas fa-globe" style="margin-right: 8px;"></i>
+                    Production
+                  </n-radio>
+                  <n-radio value="staging">
+                    <i class="fas fa-flask" style="margin-right: 8px;"></i>
+                    Staging
+                  </n-radio>
+                </n-space>
+              </n-radio-group>
+            </n-form-item>
+            
+            <n-steps size="small" current="1" status="process" class="detection-steps">
+              <n-step title="Select Environment" :description="`Choose ${selectedEnvironment} YouTrack`" />
+              <n-step title="Open YouTrack" :description="`Log into ${selectedEnvironment} YouTrack in a browser tab`" />
+              <n-step title="Detect & Connect" description="Click the button below to scan for tokens" />
+            </n-steps>
+
+            <n-form-item>
+              <n-button
+                type="primary"
+                size="medium"
+                :loading="loading"
+                attr-type="submit"
+                block
+                strong
+              >
+                <template #icon>
+                  <i class="fas fa-search"></i>
+                </template>
+                {{ loading ? `Scanning ${selectedEnvironment} YouTrack...` : `Detect & Connect to ${selectedEnvironment}` }}
+              </n-button>
+            </n-form-item>
+          </n-form>
+          
+          <n-alert type="warning" size="small" class="auth-info">
+            <template #icon>
+              <i class="fas fa-exclamation-triangle"></i>
+            </template>
+            Make sure you're logged into <strong>{{ selectedEnvironment === 'staging' ? 'stg-youtrack.internetbrands.com' : 'youtrack.internetbrands.com' }}</strong> before clicking "Detect & Connect"
+          </n-alert>
+        </div>
       </n-tab-pane>
       
       <n-tab-pane name="oauth" tab="🌐 OAuth 2.0">
@@ -138,7 +202,7 @@
 </template>
 
 <script setup>
-import { reactive, computed, watch, defineProps, defineEmits } from 'vue'
+import { reactive, computed, ref, watch, onMounted, defineProps, defineEmits } from 'vue'
 
 const props = defineProps({
   ytUrl: String,
@@ -148,21 +212,42 @@ const props = defineProps({
     type: String,
     default: 'token'
   },
+  ytEnvironment: {
+    type: String,
+    default: 'production'
+  },
   loading: Boolean
 })
 
 const emit = defineEmits([
   'save-token', 
   'save-oauth', 
+  'save-youtrack-token',
   'update:ytUrl', 
   'update:ytToken', 
   'update:ytClientId',
-  'update:authType'
+  'update:authType',
+  'update:ytEnvironment'
 ])
 
 const authType = computed({
   get: () => props.authType,
   set: (value) => emit('update:authType', value)
+})
+
+const selectedEnvironment = ref(props.ytEnvironment || 'production')
+
+// Watch for changes and emit to parent
+watch(selectedEnvironment, (newValue) => {
+  console.log('Environment changed to:', newValue)
+  emit('update:ytEnvironment', newValue)
+})
+
+// Watch props and update local ref
+watch(() => props.ytEnvironment, (newValue) => {
+  if (newValue && newValue !== selectedEnvironment.value) {
+    selectedEnvironment.value = newValue
+  }
 })
 
 const tokenFormData = reactive({
@@ -270,6 +355,8 @@ watch(() => props.ytClientId, (newValue) => {
   oauthFormData.ytClientId = newValue || ''
 })
 
+
+
 const handleAuthTypeChange = (newType) => {
   emit('update:authType', newType)
 }
@@ -281,6 +368,18 @@ const handleTokenSubmit = () => {
 const handleOAuthSubmit = () => {
   emit('save-oauth')
 }
+
+const handleYouTrackTokenSubmit = () => {
+  emit('save-youtrack-token')
+}
+
+// Ensure environment has a default value on mount
+onMounted(() => {
+  if (!props.ytEnvironment) {
+    selectedEnvironment.value = 'production'
+    emit('update:ytEnvironment', 'production')
+  }
+})
 </script>
 
 <style scoped>
@@ -308,5 +407,33 @@ const handleOAuthSubmit = () => {
 
 .auth-card :deep(.n-tab-pane) {
   padding-top: 8px;
+}
+
+.auto-detect-content {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.detection-steps {
+  margin: 16px 0;
+}
+
+.detection-steps :deep(.n-step-header) {
+  font-size: 12px;
+}
+
+.detection-steps :deep(.n-step-description) {
+  font-size: 11px;
+  color: var(--text-color-2);
+}
+
+/* Radio button styling */
+.auto-detect-content :deep(.n-radio-group) {
+  margin: 8px 0;
+}
+
+.auto-detect-content :deep(.n-radio) {
+  margin: 4px 0;
 }
 </style> 

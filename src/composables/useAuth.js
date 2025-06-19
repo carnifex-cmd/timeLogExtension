@@ -1,15 +1,18 @@
 import { ref } from 'vue'
 import { storageService } from '../services/storageService.js'
 import { YouTrackOAuthService } from '../services/oauthService.js'
+import { YouTrackTokenService } from '../services/youtrackTokenService.js'
 
 export function useAuth() {
   const ytUrl = ref('')
   const ytToken = ref('')
   const ytClientId = ref('')
-  const authType = ref('token') // 'token' or 'oauth'
+  const authType = ref('token') // 'token', 'oauth', or 'youtrack-token'
+  const ytEnvironment = ref('production') // 'production' or 'staging' - only for youtrack-token auth
   const isAuthenticated = ref(false)
   const userInfo = ref(null)
   const oauthTokens = ref(null)
+  const youtrackTokenService = new YouTrackTokenService()
 
   // Load auth from chrome.storage on initialization
   const loadAuth = async () => {
@@ -19,6 +22,7 @@ export function useAuth() {
         'ytToken', 
         'ytClientId', 
         'authType', 
+        'ytEnvironment',
         'userInfo', 
         'oauthTokens'
       ])
@@ -54,6 +58,13 @@ export function useAuth() {
       } else if (data.authType === 'token' && data.ytToken) {
         authType.value = 'token'
         ytToken.value = data.ytToken
+        isAuthenticated.value = true
+        return true
+      } else if (data.authType === 'youtrack-token' && data.ytToken) {
+        authType.value = 'youtrack-token'
+        ytToken.value = data.ytToken
+        ytEnvironment.value = data.ytEnvironment || 'production'
+        userInfo.value = data.userInfo
         isAuthenticated.value = true
         return true
       }
@@ -117,6 +128,56 @@ export function useAuth() {
     }
   }
 
+  const saveYouTrackTokenAuth = async () => {
+    try {
+      // Scan for tokens in YouTrack tabs based on selected environment
+      const detectedData = await youtrackTokenService.scanForTokens(ytEnvironment.value)
+      
+      if (!detectedData) {
+        throw new Error(`No ${ytEnvironment.value} YouTrack tokens found. Please ensure you are logged into ${ytEnvironment.value === 'staging' ? 'staging' : 'production'} YouTrack.`)
+      }
+
+      // Extract the best token
+      const authToken = youtrackTokenService.extractAuthToken(detectedData)
+      
+      if (!youtrackTokenService.validateToken(authToken.token)) {
+        throw new Error('Invalid token detected. Please try logging into YouTrack again.')
+      }
+
+      // Extract user info if available
+      const detectedUser = youtrackTokenService.extractUserInfo(detectedData)
+
+      // Set the URL from detected data
+      ytUrl.value = authToken.baseUrl
+      ytToken.value = authToken.token
+
+      // Store YouTrack token data
+      await storageService.set({
+        ytUrl: authToken.baseUrl,
+        ytToken: authToken.token,
+        authType: 'youtrack-token',
+        ytEnvironment: ytEnvironment.value,
+        userInfo: detectedUser,
+        youtrackTokenType: authToken.type
+      })
+
+      authType.value = 'youtrack-token'
+      userInfo.value = detectedUser
+      isAuthenticated.value = true
+
+      return { 
+        token: authToken.token, 
+        tokenType: authToken.type,
+        user: detectedUser,
+        baseUrl: authToken.baseUrl,
+        environment: ytEnvironment.value
+      }
+    } catch (error) {
+      console.error('Error saving YouTrack token auth:', error)
+      throw error
+    }
+  }
+
   const logout = async () => {
     try {
       // Revoke OAuth token if using OAuth
@@ -154,6 +215,11 @@ export function useAuth() {
         refreshToken: oauthTokens.value.refresh_token,
         clientId: ytClientId.value
       }
+    } else if (authType.value === 'youtrack-token') {
+      return {
+        type: 'youtrack-token',
+        token: ytToken.value
+      }
     } else {
       return {
         type: 'token',
@@ -167,6 +233,10 @@ export function useAuth() {
     // Clear previous auth data when switching
     if (newType === 'oauth') {
       ytToken.value = ''
+    } else if (newType === 'youtrack-token') {
+      ytClientId.value = ''
+      oauthTokens.value = null
+      // Keep userInfo for youtrack-token as it might be detected
     } else {
       ytClientId.value = ''
       oauthTokens.value = null
@@ -179,12 +249,15 @@ export function useAuth() {
     ytToken,
     ytClientId,
     authType,
+    ytEnvironment,
     isAuthenticated,
     userInfo,
     oauthTokens,
+    youtrackTokenService,
     loadAuth,
     saveTokenAuth,
     saveOAuthAuth,
+    saveYouTrackTokenAuth,
     logout,
     getCurrentAuthConfig,
     switchAuthType

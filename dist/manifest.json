@@ -5,10 +5,23 @@
   "description": "Log time into multiple YouTrack tickets simultaneously.",
   "permissions": [
     "storage",
-    "identity"
+    "identity",
+    "tabs",
+    "activeTab",
+    "scripting"
   ],
   "host_permissions": ["<all_urls>"],
   "action": {
     "default_popup": "popup.html"
-  }
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "*://youtrack.internetbrands.com/*",
+        "*://stg-youtrack.internetbrands.com/*"
+      ],
+      "js": ["content-script.js"],
+      "run_at": "document_idle"
+    }
+  ]
 }

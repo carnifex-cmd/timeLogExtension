@@ -21,6 +21,8 @@ src/
 │   └── useModal.js
 ├── services/            # External API and storage services
 │   ├── youtrackApi.js
+│   ├── youtrackTokenService.js
+│   ├── oauthService.js
 │   └── storageService.js
 ├── styles/              # Global styles and design tokens
 │   ├── variables.css
@@ -70,6 +72,35 @@ Consistent styling through:
 5. **Scalability** - New features can be added without cluttering existing code
 6. **Type Safety** - Clear interfaces between modules
 7. **Performance** - Better tree-shaking and code splitting opportunities
+
+## 🔐 Authentication Methods
+
+The extension supports multiple authentication methods:
+
+### 1. **API Token** (Manual)
+Traditional permanent token authentication:
+- Enter YouTrack URL and permanent token manually
+- Requires creating a token in YouTrack settings
+
+### 2. **OAuth 2.0** (Secure)
+OAuth-based authentication:
+- Secure authentication without sharing permanent tokens
+- Requires OAuth client setup in YouTrack
+
+### 3. **Auto-Detect** (Convenient) ✨ **NEW**
+Automatically detects authentication from existing YouTrack sessions:
+- Open YouTrack in any browser tab and log in
+- Click "Detect & Connect" to automatically extract authentication
+- Works with any YouTrack authentication (JWT tokens, session tokens)
+- No manual token copying required
+
+#### How Auto-Detection Works:
+1. Content script monitors YouTrack pages for authentication tokens
+2. Extension scans active YouTrack tabs when requested
+3. Extracts JWT tokens, session tokens, or cookies from localStorage
+4. Automatically configures the extension with detected credentials
+
+This method is particularly useful for enterprise YouTrack instances where users are already authenticated through SSO or other authentication mechanisms.
 
 ## 🔧 Development
 
