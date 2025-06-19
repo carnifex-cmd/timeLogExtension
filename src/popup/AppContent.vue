@@ -203,11 +203,21 @@ const handleLogout = () => {
   })
 }
 
+// Automatic logout handler for when tokens expire
+const handleAutoLogout = async () => {
+  await auth.logout()
+  notification.warning({
+    title: '🔒 Session Expired',
+    description: 'Your authentication has expired. Please login again.',
+    duration: 5000
+  })
+}
+
 // Ticket handlers
 const loadTickets = async () => {
   try {
     const authConfig = auth.getCurrentAuthConfig()
-    await tickets.fetchTickets(auth.ytUrl.value, authConfig)
+    await tickets.fetchTickets(auth.ytUrl.value, authConfig, handleAutoLogout)
     
     const ticketCount = tickets.tickets.value.length
     if (ticketCount > 0) {
@@ -217,11 +227,6 @@ const loadTickets = async () => {
     }
   } catch (error) {
     message.error('Could not load tickets: ' + error.message)
-    
-    // If authentication error, logout
-    if (error.message.includes('Authentication expired') || error.message.includes('401')) {
-      await auth.logout()
-    }
   }
 }
 
@@ -239,7 +244,7 @@ const handleSubmitLogs = async () => {
   
   try {
     const authConfig = auth.getCurrentAuthConfig()
-    await tickets.submitLogs(auth.ytUrl.value, authConfig)
+    await tickets.submitLogs(auth.ytUrl.value, authConfig, handleAutoLogout)
     
     notification.success({
       title: '✅ Success!',
