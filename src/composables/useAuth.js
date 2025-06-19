@@ -8,7 +8,6 @@ export function useAuth() {
   const ytToken = ref('')
   const ytClientId = ref('')
   const authType = ref('token') // 'token', 'oauth', or 'youtrack-token'
-  const ytEnvironment = ref('production') // 'production' or 'staging' - only for youtrack-token auth
   const isAuthenticated = ref(false)
   const userInfo = ref(null)
   const oauthTokens = ref(null)
@@ -22,7 +21,6 @@ export function useAuth() {
         'ytToken', 
         'ytClientId', 
         'authType', 
-        'ytEnvironment',
         'userInfo', 
         'oauthTokens'
       ])
@@ -63,7 +61,6 @@ export function useAuth() {
       } else if (data.authType === 'youtrack-token' && data.ytToken) {
         authType.value = 'youtrack-token'
         ytToken.value = data.ytToken
-        ytEnvironment.value = data.ytEnvironment || 'production'
         userInfo.value = data.userInfo
         isAuthenticated.value = true
         return true
@@ -130,11 +127,11 @@ export function useAuth() {
 
   const saveYouTrackTokenAuth = async () => {
     try {
-      // Scan for tokens in YouTrack tabs based on selected environment
-      const detectedData = await youtrackTokenService.scanForTokens(ytEnvironment.value)
+      // Scan for tokens in YouTrack tabs (production only)
+      const detectedData = await youtrackTokenService.scanForTokens()
       
       if (!detectedData) {
-        throw new Error(`No ${ytEnvironment.value} YouTrack tokens found. Please ensure you are logged into ${ytEnvironment.value === 'staging' ? 'staging' : 'production'} YouTrack.`)
+        throw new Error('No production YouTrack tokens found. Please ensure you are logged into production YouTrack.')
       }
 
       // Extract the best token
@@ -156,7 +153,6 @@ export function useAuth() {
         ytUrl: authToken.baseUrl,
         ytToken: authToken.token,
         authType: 'youtrack-token',
-        ytEnvironment: ytEnvironment.value,
         userInfo: detectedUser,
         youtrackTokenType: authToken.type
       })
@@ -170,7 +166,7 @@ export function useAuth() {
         tokenType: authToken.type,
         user: detectedUser,
         baseUrl: authToken.baseUrl,
-        environment: ytEnvironment.value
+        environment: 'production'
       }
     } catch (error) {
       console.error('Error saving YouTrack token auth:', error)
@@ -249,7 +245,6 @@ export function useAuth() {
     ytToken,
     ytClientId,
     authType,
-    ytEnvironment,
     isAuthenticated,
     userInfo,
     oauthTokens,

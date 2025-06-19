@@ -81,29 +81,13 @@
             </template>
             <div>
               <div style="font-weight: 500; margin-bottom: 8px;">Automatic Token Detection</div>
-              <div>This will automatically detect and use your authentication from any open YouTrack tab.</div>
+              <div>This will automatically detect and use your authentication from any open production YouTrack tab.</div>
             </div>
           </n-alert>
 
           <n-form @submit.prevent="handleYouTrackTokenSubmit">
-            <n-form-item label="Environment" path="environment">
-              <n-radio-group v-model:value="selectedEnvironment" size="medium">
-                <n-space vertical>
-                  <n-radio value="production">
-                    <i class="fas fa-globe" style="margin-right: 8px;"></i>
-                    Production
-                  </n-radio>
-                  <n-radio value="staging">
-                    <i class="fas fa-flask" style="margin-right: 8px;"></i>
-                    Staging
-                  </n-radio>
-                </n-space>
-              </n-radio-group>
-            </n-form-item>
-            
             <n-steps size="small" current="1" status="process" class="detection-steps">
-              <n-step title="Select Environment" :description="`Choose ${selectedEnvironment} YouTrack`" />
-              <n-step title="Open YouTrack" :description="`Log into ${selectedEnvironment} YouTrack in a browser tab`" />
+              <n-step title="Open YouTrack" description="Log into production YouTrack in a browser tab" />
               <n-step title="Detect & Connect" description="Click the button below to scan for tokens" />
             </n-steps>
 
@@ -119,7 +103,7 @@
                 <template #icon>
                   <i class="fas fa-search"></i>
                 </template>
-                {{ loading ? `Scanning ${selectedEnvironment} YouTrack...` : `Detect & Connect to ${selectedEnvironment}` }}
+                {{ loading ? 'Scanning production YouTrack...' : 'Detect & Connect to Production' }}
               </n-button>
             </n-form-item>
           </n-form>
@@ -128,7 +112,7 @@
             <template #icon>
               <i class="fas fa-exclamation-triangle"></i>
             </template>
-            Make sure you're logged into <strong>{{ selectedEnvironment === 'staging' ? 'stg-youtrack.internetbrands.com' : 'youtrack.internetbrands.com' }}</strong> before clicking "Detect & Connect"
+            Make sure you're logged into <strong>youtrack.internetbrands.com</strong> before clicking "Detect & Connect"
           </n-alert>
         </div>
       </n-tab-pane>
@@ -212,10 +196,6 @@ const props = defineProps({
     type: String,
     default: 'token'
   },
-  ytEnvironment: {
-    type: String,
-    default: 'production'
-  },
   loading: Boolean
 })
 
@@ -226,28 +206,12 @@ const emit = defineEmits([
   'update:ytUrl', 
   'update:ytToken', 
   'update:ytClientId',
-  'update:authType',
-  'update:ytEnvironment'
+  'update:authType'
 ])
 
 const authType = computed({
   get: () => props.authType,
   set: (value) => emit('update:authType', value)
-})
-
-const selectedEnvironment = ref(props.ytEnvironment || 'production')
-
-// Watch for changes and emit to parent
-watch(selectedEnvironment, (newValue) => {
-  console.log('Environment changed to:', newValue)
-  emit('update:ytEnvironment', newValue)
-})
-
-// Watch props and update local ref
-watch(() => props.ytEnvironment, (newValue) => {
-  if (newValue && newValue !== selectedEnvironment.value) {
-    selectedEnvironment.value = newValue
-  }
 })
 
 const tokenFormData = reactive({
@@ -355,8 +319,6 @@ watch(() => props.ytClientId, (newValue) => {
   oauthFormData.ytClientId = newValue || ''
 })
 
-
-
 const handleAuthTypeChange = (newType) => {
   emit('update:authType', newType)
 }
@@ -373,12 +335,9 @@ const handleYouTrackTokenSubmit = () => {
   emit('save-youtrack-token')
 }
 
-// Ensure environment has a default value on mount
+// Environment selection removed - always uses production for auto-detect
 onMounted(() => {
-  if (!props.ytEnvironment) {
-    selectedEnvironment.value = 'production'
-    emit('update:ytEnvironment', 'production')
-  }
+  // No environment selection needed anymore
 })
 </script>
 

@@ -27,11 +27,11 @@ export class YouTrackTokenService {
 
   /**
    * Scan active YouTrack tabs for authentication tokens
-   * @param {string} environment - 'production' or 'staging'
+   * Now only scans production YouTrack tabs
    */
-  async scanForTokens(environment = 'production') {
+  async scanForTokens() {
     try {
-      console.log('Starting token scan for environment:', environment);
+      console.log('Starting token scan for production environment');
       
       // Get all tabs
       const tabs = await new Promise((resolve) => {
@@ -40,25 +40,17 @@ export class YouTrackTokenService {
 
       console.log('Found tabs:', tabs.map(t => ({ id: t.id, url: t.url })));
 
-      // Filter for YouTrack tabs based on environment
-      let youtrackTabs;
-      if (environment === 'staging') {
-        youtrackTabs = tabs.filter(tab => 
-          tab.url && tab.url.includes('stg-youtrack.internetbrands.com')
-        );
-      } else {
-        youtrackTabs = tabs.filter(tab => 
-          tab.url && (
-            tab.url.includes('youtrack.internetbrands.com') && !tab.url.includes('stg-youtrack')
-          )
-        );
-      }
+      // Filter for production YouTrack tabs only
+      const youtrackTabs = tabs.filter(tab => 
+        tab.url && (
+          tab.url.includes('youtrack.internetbrands.com') && !tab.url.includes('stg-youtrack')
+        )
+      );
 
-      console.log(`${environment} YouTrack tabs found:`, youtrackTabs.map(t => ({ id: t.id, url: t.url })));
+      console.log('Production YouTrack tabs found:', youtrackTabs.map(t => ({ id: t.id, url: t.url })));
 
       if (youtrackTabs.length === 0) {
-        const envName = environment === 'staging' ? 'staging (stg-youtrack.internetbrands.com)' : 'production (youtrack.internetbrands.com)';
-        throw new Error(`No ${envName} YouTrack tabs found. Please open ${envName} in a browser tab first.`);
+        throw new Error('No production YouTrack tabs found. Please open production YouTrack (youtrack.internetbrands.com) in a browser tab first.');
       }
 
       // Try to get auth data from each YouTrack tab

@@ -7,7 +7,6 @@
       :ytToken="auth.ytToken.value"
       :ytClientId="auth.ytClientId.value"
       :authType="auth.authType.value"
-      :ytEnvironment="auth.ytEnvironment.value"
       :loading="tickets.loading.value"
       @save-token="handleTokenAuth"
       @save-oauth="handleOAuthAuth"
@@ -15,8 +14,7 @@
       @update:ytUrl="auth.ytUrl.value = $event"
       @update:ytToken="auth.ytToken.value = $event"
       @update:ytClientId="auth.ytClientId.value = $event"
-      @update:authType="auth.switchAuthType($event)"
-      @update:ytEnvironment="auth.ytEnvironment.value = $event"
+      @update:authType="auth.authType.value = $event"
     />
 
     <!-- User Info Banner (for OAuth) -->
@@ -175,7 +173,7 @@ const handleYouTrackTokenAuth = async () => {
     
     notification.success({
       title: '🔍 Auto-Detected!',
-      description: `Successfully connected to ${result.environment} using ${tokenTypeDisplay}${result.user ? ` as ${userDisplayName}` : ''}`,
+      description: `Successfully connected to production using ${tokenTypeDisplay}${result.user ? ` as ${userDisplayName}` : ''}`,
       duration: 4000
     })
   } catch (error) {
