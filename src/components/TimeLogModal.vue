@@ -227,6 +227,13 @@ function formatDate(date) {
   })
 }
 
+function formatDateForAPI(date) {
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
 // Watch for prop changes and update form data
 watch(() => props.time, (newValue) => {
   formData.time = newValue || ''
@@ -254,7 +261,7 @@ const handleSave = () => {
     }
     // Create an array of time log entries for each date
     const timeLogs = selectedDates.value.map(date => ({
-      date: date.toISOString().split('T')[0],
+      date: formatDateForAPI(date),
       time: formData.time,
       comment: formData.comment
     }))
