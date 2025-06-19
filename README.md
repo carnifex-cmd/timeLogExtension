@@ -22,7 +22,6 @@ src/
 ├── services/            # External API and storage services
 │   ├── youtrackApi.js
 │   ├── youtrackTokenService.js
-│   ├── oauthService.js
 │   └── storageService.js
 ├── styles/              # Global styles and design tokens
 │   ├── variables.css
@@ -45,7 +44,7 @@ Business logic is separated into reusable composables:
 ### **Components** (Single Responsibility)
 UI is broken down into focused components:
 
-- **`AuthenticationForm`** - Handles YouTrack credentials
+- **`AuthenticationForm`** - Handles YouTrack credentials with method selection
 - **`TicketList`** - Displays tickets with search and pagination
 - **`TicketItem`** - Individual ticket display and interactions
 - **`TimeLogModal`** - Time logging form
@@ -54,6 +53,7 @@ UI is broken down into focused components:
 External interactions are handled by services:
 
 - **`youtrackApi`** - YouTrack REST API integration
+- **`youtrackTokenService`** - Automatic token detection from browser sessions
 - **`storageService`** - Chrome extension storage wrapper
 
 ### **Styles** (Design System)
@@ -75,32 +75,35 @@ Consistent styling through:
 
 ## 🔐 Authentication Methods
 
-The extension supports multiple authentication methods:
+The extension provides a clean, two-step authentication process:
 
-### 1. **API Token** (Manual)
+### Step 1: Method Selection
+Choose your preferred authentication method from a clean interface:
+
+### Step 2: Authentication Forms
+
+#### 1. **🔑 API Token** (Manual)
 Traditional permanent token authentication:
-- Enter YouTrack URL and permanent token manually
-- Requires creating a token in YouTrack settings
+- Enter YouTrack URL and permanent API token
+- Requires creating a token in YouTrack: Settings → Security → New Token
+- Best for: Users who prefer manual token management
 
-### 2. **OAuth 2.0** (Secure)
-OAuth-based authentication:
-- Secure authentication without sharing permanent tokens
-- Requires OAuth client setup in YouTrack
-
-### 3. **Auto-Detect** (Convenient) ✨ **NEW**
+#### 2. **🔍 Auto-Detect** (Convenient) ✨ **Recommended**
 Automatically detects authentication from existing YouTrack sessions:
-- Open YouTrack in any browser tab and log in
-- Click "Detect & Connect" to automatically extract authentication
-- Works with any YouTrack authentication (JWT tokens, session tokens)
+- Login to production YouTrack in any browser tab
+- Click "Auto-Detect Authentication" to automatically extract credentials
+- Works with YouTrack's internal authentication tokens
 - No manual token copying required
+- Best for: Users already logged into YouTrack
 
 #### How Auto-Detection Works:
-1. Content script monitors YouTrack pages for authentication tokens
-2. Extension scans active YouTrack tabs when requested
-3. Extracts JWT tokens, session tokens, or cookies from localStorage
+1. User logs into YouTrack in a browser tab
+2. Extension scans the YouTrack tab for authentication tokens
+3. Extracts authentication data from the browser's localStorage
 4. Automatically configures the extension with detected credentials
+5. Provides seamless authentication experience
 
-This method is particularly useful for enterprise YouTrack instances where users are already authenticated through SSO or other authentication mechanisms.
+This method is particularly useful for enterprise YouTrack instances where users are already authenticated and don't want to manage separate API tokens.
 
 ## 🔧 Development
 
@@ -121,12 +124,15 @@ The build process creates optimized files in the `dist/` directory, ready for Ch
 
 ## 🚀 Key Improvements
 
+- **Clean Authentication Flow** - Two-step process with method selection
+- **Simplified Authentication** - Removed OAuth complexity, focused on practical methods
 - **90% reduction** in main App.vue file size (396 → 80 lines)
 - **Modular composables** for reusable business logic
 - **Component-based UI** with clear props and events
 - **Centralized styling** with CSS custom properties
 - **Service layer** for external API interactions
 - **Better error handling** and user feedback
+- **Automatic token expiration handling** - Users are automatically logged out when tokens expire
 - **Improved developer experience** with clear file organization
 
 This refactored structure makes the codebase much easier to understand, maintain, and extend with new features. 

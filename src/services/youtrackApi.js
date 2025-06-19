@@ -1,16 +1,14 @@
 export class YouTrackApi {
   constructor(baseUrl, authConfig) {
     this.baseUrl = baseUrl
-    this.authConfig = authConfig // { type: 'oauth'|'token', token: string, refreshToken?: string }
+    this.authConfig = authConfig // { type: 'token'|'youtrack-token', token: string }
   }
 
   /**
    * Get authorization header based on auth type
    */
   getAuthHeader() {
-    if (this.authConfig.type === 'oauth') {
-      return `Bearer ${this.authConfig.token}`
-    } else if (this.authConfig.type === 'youtrack-token') {
+    if (this.authConfig.type === 'youtrack-token') {
       // YouTrack tokens might use different auth schemes
       const token = this.authConfig.token
       // Check if it's a JWT token (starts with 'eyJ')
@@ -28,7 +26,7 @@ export class YouTrackApi {
   }
 
   /**
-   * Make authenticated request with automatic token refresh for OAuth
+   * Make authenticated request
    */
   async makeAuthenticatedRequest(url, options = {}) {
     const headers = {
@@ -48,56 +46,16 @@ export class YouTrackApi {
       headers
     })
 
-    // If OAuth token expired, try to refresh
-    if (response.status === 401 && this.authConfig.type === 'oauth' && this.authConfig.refreshToken) {
-      try {
-        await this.refreshOAuthToken()
-        
-        // Retry request with new token
-        headers['Authorization'] = this.getAuthHeader()
-        response = await fetch(url, {
-          ...options,
-          headers
-        })
-      } catch (refreshError) {
-        console.error('Token refresh failed:', refreshError)
-        throw new Error('Authentication expired. Please login again.')
+    // Handle authentication errors
+    if (response.status === 401) {
+      if (this.authConfig.type === 'youtrack-token') {
+        throw new Error('YouTrack authentication expired. Please log into YouTrack again and use auto-detect.')
+      } else {
+        throw new Error('Authentication failed. Please check your API token.')
       }
-    } else if (response.status === 401 && this.authConfig.type === 'youtrack-token') {
-      // For YouTrack token auth, we can't refresh, so user needs to re-authenticate
-      throw new Error('YouTrack authentication expired. Please log into YouTrack again and use auto-detect.')
     }
 
     return response
-  }
-
-  /**
-   * Refresh OAuth token
-   */
-  async refreshOAuthToken() {
-    const { YouTrackOAuthService } = await import('./oauthService.js')
-    const oauthService = new YouTrackOAuthService(this.baseUrl, this.authConfig.clientId)
-    
-    const newTokens = await oauthService.refreshToken(this.authConfig.refreshToken)
-    
-    // Update auth config with new tokens
-    this.authConfig.token = newTokens.access_token
-    if (newTokens.refresh_token) {
-      this.authConfig.refreshToken = newTokens.refresh_token
-    }
-    
-    // Store updated tokens
-    const { storageService } = await import('./storageService.js')
-    await storageService.set({
-      authType: 'oauth',
-      oauthTokens: {
-        access_token: newTokens.access_token,
-        refresh_token: newTokens.refresh_token || this.authConfig.refreshToken,
-        expires_at: newTokens.expires_at
-      }
-    })
-
-    return newTokens
   }
 
   async fetchTickets() {

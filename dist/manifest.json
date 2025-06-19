@@ -5,7 +5,6 @@
   "description": "Log time into multiple YouTrack tickets simultaneously.",
   "permissions": [
     "storage",
-    "identity",
     "tabs",
     "activeTab",
     "scripting"

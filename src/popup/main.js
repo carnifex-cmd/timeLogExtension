@@ -24,6 +24,11 @@ import {
   NGrid,
   NGridItem,
   NDatePicker,
+  NSteps,
+  NStep,
+  NAlert,
+  NAvatar,
+  NText,
   // Create naive ui
   create
 } from 'naive-ui'
@@ -51,7 +56,12 @@ const naive = create({
     NTooltip,
     NGrid,
     NGridItem,
-    NDatePicker
+    NDatePicker,
+    NSteps,
+    NStep,
+    NAlert,
+    NAvatar,
+    NText
   ]
 })
 

@@ -5,19 +5,16 @@
       v-if="!auth.isAuthenticated.value"
       :ytUrl="auth.ytUrl.value"
       :ytToken="auth.ytToken.value"
-      :ytClientId="auth.ytClientId.value"
       :authType="auth.authType.value"
       :loading="tickets.loading.value"
       @save-token="handleTokenAuth"
-      @save-oauth="handleOAuthAuth"
       @save-youtrack-token="handleYouTrackTokenAuth"
       @update:ytUrl="auth.ytUrl.value = $event"
       @update:ytToken="auth.ytToken.value = $event"
-      @update:ytClientId="auth.ytClientId.value = $event"
       @update:authType="auth.authType.value = $event"
     />
 
-    <!-- User Info Banner (for OAuth) -->
+    <!-- User Info Banner (for YouTrack auto-detect) -->
     <n-card 
       v-else-if="auth.userInfo.value" 
       size="small" 
@@ -141,24 +138,7 @@ const handleTokenAuth = async () => {
   }
 }
 
-const handleOAuthAuth = async () => {
-  try {
-    const result = await auth.saveOAuthAuth()
-    await loadTickets()
-    
-    notification.success({
-      title: '🎉 Welcome!',
-      description: `Successfully authenticated as ${result.user.name || result.user.login}`,
-      duration: 4000
-    })
-  } catch (error) {
-    if (error.message.includes('User cancelled')) {
-      message.info('OAuth authentication was cancelled')
-    } else {
-      message.error('OAuth authentication failed: ' + error.message)
-    }
-  }
-}
+
 
 const handleYouTrackTokenAuth = async () => {
   try {
