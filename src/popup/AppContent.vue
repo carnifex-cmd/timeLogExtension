@@ -39,6 +39,21 @@
       </n-space>
     </n-card>
 
+    <!-- Simple Logout Button (for API token authentication) -->
+    <div v-else-if="auth.isAuthenticated.value && !auth.userInfo.value" class="simple-logout-container">
+      <n-button 
+        size="small" 
+        secondary 
+        class="logout-button"
+        @click="handleLogout"
+      >
+        <template #icon>
+          <i class="fas fa-sign-out-alt"></i>
+        </template>
+        Logout
+      </n-button>
+    </div>
+
     <!-- Bookmark Management -->
     <BookmarkList
       v-if="auth.isAuthenticated.value"
@@ -309,5 +324,31 @@ const handleModalSave = (timeLogs) => {
 .user-email {
   font-size: 12px;
   color: var(--text-muted);
+}
+
+.simple-logout-container {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 16px;
+}
+
+.logout-button {
+  background: linear-gradient(135deg, #ff6b6b, #ee5a52);
+  border: none;
+  color: white;
+  font-weight: 500;
+  /* box-shadow: 0 2px 8px rgba(238, 90, 82, 0.3); */
+  transition: all 0.3s ease;
+}
+
+.logout-button:hover {
+  background: linear-gradient(135deg, #ff5252, #e53935);
+  /* box-shadow: 0 4px 12px rgba(238, 90, 82, 0.4); */
+  transform: translateY(-1px);
+}
+
+.logout-button:active {
+  transform: translateY(0);
+  /* box-shadow: 0 2px 6px rgba(238, 90, 82, 0.3); */
 }
 </style> 
