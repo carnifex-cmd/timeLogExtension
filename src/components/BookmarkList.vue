@@ -41,14 +41,6 @@
           description="No bookmarked tickets"
           class="empty-state"
         >
-          <template #icon>
-            <i class="fas fa-star"></i>
-          </template>
-          <template #extra>
-            <n-text depth="3" style="font-size: 12px;">
-              Click the star icon on any ticket to bookmark it
-            </n-text>
-          </template>
         </n-empty>
         
         <!-- Bookmarks List -->
@@ -147,9 +139,6 @@ const handleToggleBookmark = (ticket) => {
   gap: 16px;
 }
 
-.empty-state {
-  padding: 16px;
-}
 
 .bookmarks-grid {
   display: flex;
