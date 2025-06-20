@@ -80,25 +80,24 @@
             Show {{ Math.min(5, filteredTickets.length - ticketsToShow) }} more
           </n-button>
         </div>
-        
-        <!-- Submit Button -->
-        <div class="submit-container">
-          <n-button
-            @click="$emit('submit-logs')"
-            type="success"
-            size="large"
-            :disabled="!hasSelectedTickets"
-            strong
-            block
-          >
-            <template #icon>
-              <i class="fas fa-paper-plane"></i>
-            </template>
-            Submit {{ selectedCount }} Time Log{{ selectedCount !== 1 ? 's' : '' }}
-          </n-button>
-        </div>
       </div>
     </n-card>
+    
+    <!-- Sticky Submit Button -->
+    <div class="submit-container-sticky">
+      <n-button
+        @click="$emit('submit-logs')"
+        type="success"
+        size="large"
+        :disabled="!hasSelectedTickets"
+        strong
+      >
+        <template #icon>
+          <i class="fas fa-paper-plane"></i>
+        </template>
+        Submit {{ selectedCount }} Time Log{{ selectedCount !== 1 ? 's' : '' }}
+      </n-button>
+    </div>
   </div>
 </template>
 
@@ -122,7 +121,7 @@ const emit = defineEmits([
   'toggle-selection', 
   'open-modal', 
   'toggle-bookmark',
-  'show-more', 
+  'show-more',
   'submit-logs'
 ])
 
@@ -163,6 +162,8 @@ const handleToggleBookmark = (ticket) => {
 <style scoped>
 .ticket-list-container {
   width: 100%;
+  position: relative;
+  padding-bottom: 80px; /* Space for sticky button */
 }
 
 .search-input {
@@ -195,8 +196,14 @@ const handleToggleBookmark = (ticket) => {
   margin: 8px 0;
 }
 
-.submit-container {
-  margin-top: 8px;
+.submit-container-sticky {
+  position: fixed;
+  bottom: 16px;
+  right: 16px;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.15);
+  z-index: 1000;
 }
 
 /* Custom card styling */

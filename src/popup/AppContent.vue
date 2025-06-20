@@ -153,8 +153,6 @@ const handleTokenAuth = async () => {
   }
 }
 
-
-
 const handleYouTrackTokenAuth = async () => {
   try {
     console.log('Starting YouTrack token authentication...');
@@ -269,7 +267,6 @@ const handleToggleBookmark = async (ticket) => {
   }
 }
 
-
 const handleClearAllBookmarks = () => {
   dialog.warning({
     title: 'Clear All Bookmarks',
@@ -315,6 +312,13 @@ const handleModalSave = (timeLogs) => {
 </script>
 
 <style scoped>
+.app-container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  max-height: 600px; /* Extension height limit */
+}
+
 .user-info-banner {
   margin-bottom: 16px;
 }
