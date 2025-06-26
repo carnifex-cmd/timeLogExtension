@@ -270,7 +270,7 @@ const handleToggleClosedTickets = async (includeClosedTickets) => {
     await loadTickets(false) // Don't show the "Loaded X tickets" message
     
     if (includeClosedTickets) {
-      message.info('Now showing open and closed tickets from last 4 weeks')
+      message.info('Now showing all tickets from last 4 weeks')
     } else {
       message.info('Now showing open tickets only')
     }

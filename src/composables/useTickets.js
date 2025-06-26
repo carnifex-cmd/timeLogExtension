@@ -10,7 +10,7 @@ export function useTickets() {
   const loading = ref(false)
   const searchQuery = ref('')
   const ticketsToShow = ref(5)
-  const includeClosedTickets = ref(false)
+  const includeClosedTickets = ref(true)
 
   const filteredTickets = computed(() => {
     if (!searchQuery.value) return tickets.value

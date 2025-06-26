@@ -9,13 +9,12 @@
               <n-switch
                 v-model:value="includeClosedTickets"
                 size="small"
-                :rail-style="{ width: '36px' }"
               >
-                <template #checked>📦</template>
-                <template #unchecked>📂</template>
+                <template #checked><i class="fas fa-archive"></i></template>
+                <template #unchecked><i class="fas fa-folder-open"></i></template>
               </n-switch>
             </template>
-            <span>{{ includeClosedTickets ? 'Including closed tickets from last 4 weeks' : 'Open tickets only' }}</span>
+            <span>{{ includeClosedTickets ? 'Showing all tickets from last 4 weeks' : 'Open tickets only' }}</span>
           </n-tooltip>
           
           <!-- Selected Count -->
