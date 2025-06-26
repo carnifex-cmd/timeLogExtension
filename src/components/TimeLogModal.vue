@@ -24,28 +24,6 @@
           <div class="total-time">
             <strong>Total: {{ loggedTime.totalFormatted }}</strong>
           </div>
-          
-          <div v-if="loggedTime.workItems && loggedTime.workItems.length > 0" class="recent-entries">
-            <div class="recent-entries-header">
-              <strong>Recent entries:</strong>
-            </div>
-            <div 
-              v-for="(item, index) in loggedTime.workItems.slice(0, 3)" 
-              :key="index"
-              class="work-item"
-            >
-              • {{ item.duration?.presentation || 'Unknown' }}
-              <span v-if="item.date" class="work-item-date">
-                ({{ formatWorkItemDate(new Date(item.date)) }})
-              </span>
-              <span v-if="item.text" class="work-item-text">
-                - {{ item.text.slice(0, 50) }}{{ item.text.length > 50 ? '...' : '' }}
-              </span>
-            </div>
-            <div v-if="loggedTime.workItems.length > 3" class="more-entries">
-              ... and {{ loggedTime.workItems.length - 3 }} more entries
-            </div>
-          </div>
         </div>
       </n-alert>
     </div>
@@ -82,8 +60,8 @@
               :max="todayDate"
               clearable
               :shortcuts="dateShortcuts"
-              to="body"
-              :panel-cols="1"
+              placement="bottom-start"
+              :panel-cols="2"
             >
               <template #prefix>
                 <i class="fas fa-calendar"></i>
@@ -274,14 +252,7 @@ function formatDateForAPI(date) {
   return `${year}-${month}-${day}`
 }
 
-function formatWorkItemDate(date) {
-  return new Date(date).toLocaleDateString('en-US', {
-    weekday: 'short',
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric'
-  })
-}
+
 
 // Watch for prop changes and update form data
 watch(() => props.time, (newValue) => {
@@ -323,7 +294,9 @@ const handleSave = () => {
 /* Custom modal styling */
 :deep(.n-card.n-modal) {
   max-width: 600px;
-  width: 90vw;
+  width: 95vw;
+  max-height: 90vh;
+  overflow: hidden;
 }
 
 :deep(.n-card-header) {
@@ -346,11 +319,30 @@ const handleSave = () => {
   :deep(.n-grid) {
     grid-template-columns: 1fr !important;
   }
+  
+  :deep(.n-card.n-modal) {
+    width: 98vw;
+    max-height: 85vh;
+  }
+  
+  :deep(.n-date-picker-panel) {
+    max-width: 300px;
+  }
 }
 
 /* Date range picker styling */
 :deep(.n-date-picker) {
   width: 100%;
+}
+
+/* Ensure date picker panel stays within modal bounds */
+:deep(.n-date-picker-panel) {
+  max-width: 500px;
+  transform: none !important;
+}
+
+:deep(.n-date-panel) {
+  min-width: 240px !important;
 }
 
 /* Logged time section styling */
@@ -368,36 +360,5 @@ const handleSave = () => {
   color: var(--primary-color, #0066ff);
 }
 
-.recent-entries {
-  margin-top: 8px;
-}
 
-.recent-entries-header {
-  margin-bottom: 6px;
-  font-size: 13px;
-}
-
-.work-item {
-  margin-bottom: 4px;
-  font-size: 12px;
-  line-height: 1.4;
-  color: var(--text-color-2, #666);
-}
-
-.work-item-date {
-  color: var(--text-color-3, #999);
-  font-size: 11px;
-}
-
-.work-item-text {
-  color: var(--text-color-2, #666);
-  font-style: italic;
-}
-
-.more-entries {
-  margin-top: 6px;
-  font-size: 11px;
-  color: var(--text-color-3, #999);
-  font-style: italic;
-}
 </style> 

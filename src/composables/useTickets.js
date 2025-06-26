@@ -69,11 +69,33 @@ export function useTickets() {
     try {
       const api = new YouTrackApi(ytUrl, authConfig)
       
+      // Track submission results
+      const submissionResults = {
+        totalTimeLogged: 0,
+        ticketsUpdated: [],
+        logCount: 0
+      }
+      
       for (const ticketId of selectedIds) {
         const ticketLogs = logs[ticketId]
         if (!Array.isArray(ticketLogs) || ticketLogs.length === 0) continue
+        
+        let ticketTotalMinutes = 0
         for (const log of ticketLogs) {
           await api.submitTimeLog(ticketId, log)
+          ticketTotalMinutes += api.parseDurationToMinutes(log.time)
+          submissionResults.logCount++
+        }
+        
+        submissionResults.totalTimeLogged += ticketTotalMinutes
+        submissionResults.ticketsUpdated.push(ticketId)
+        
+        // Refresh logged time data for this ticket
+        try {
+          const timeData = await api.fetchLoggedTimeForTicket(ticketId)
+          loggedTimeData[ticketId] = timeData
+        } catch (error) {
+          console.warn(`Failed to refresh logged time for ticket ${ticketId}:`, error)
         }
       }
       
@@ -83,7 +105,12 @@ export function useTickets() {
         delete logs[id]
       })
       
-      return true
+      return {
+        success: true,
+        totalTimeFormatted: api.formatMinutesToDuration(submissionResults.totalTimeLogged),
+        ticketCount: submissionResults.ticketsUpdated.length,
+        logCount: submissionResults.logCount
+      }
     } catch (error) {
       console.error('Error submitting logs:', error)
       

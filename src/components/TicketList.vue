@@ -59,6 +59,7 @@
             :is-selected="selectedTickets[ticket.idReadable] || false"
             :is-bookmarked="bookmarkedTickets && bookmarkedTickets[ticket.idReadable] || false"
             :time-log="logs[ticket.idReadable]"
+            :logged-time-data="loggedTimeData && loggedTimeData[ticket.idReadable]"
             :is-loading-logged-time="loadingLoggedTime && loadingLoggedTime[ticket.idReadable]"
             @toggle-selection="handleToggleSelection"
             @open-modal="handleOpenModal"
@@ -111,6 +112,7 @@ const props = defineProps({
   filteredTickets: Array,
   selectedTickets: Object,
   logs: Object,
+  loggedTimeData: Object,
   loading: Boolean,
   searchQuery: String,
   ticketsToShow: Number,

@@ -129,13 +129,18 @@ export class YouTrackApi {
     let totalMinutes = 0
     for (const item of workItems) {
       if (item.duration && item.duration.presentation) {
-        totalMinutes += this.parseDurationToMinutes(item.duration.presentation)
+        const parsedMinutes = this.parseDurationToMinutes(item.duration.presentation)
+        console.log(`Parsing "${item.duration.presentation}" -> ${parsedMinutes} minutes`)
+        totalMinutes += parsedMinutes
       }
     }
     
+    const formatted = this.formatMinutesToDuration(totalMinutes)
+    console.log(`Total ${totalMinutes} minutes -> formatted as "${formatted}"`)
+    
     return {
       totalMinutes,
-      totalFormatted: this.formatMinutesToDuration(totalMinutes),
+      totalFormatted: formatted,
       workItems: workItems
     }
   }
@@ -169,28 +174,34 @@ export class YouTrackApi {
   }
 
   /**
-   * Parse duration string (like "2h 30m") to total minutes
+   * Parse duration string (like "2h 30m" or "46h") to total minutes
    */
   parseDurationToMinutes(durationStr) {
     if (!durationStr) return 0
     
     let totalMinutes = 0
-    const lowerStr = durationStr.toLowerCase()
+    const lowerStr = durationStr.toLowerCase().trim()
     
-    // Match hours (e.g., "2h", "1.5h")
-    const hoursMatch = lowerStr.match(/(\d+(?:\.\d+)?)h/)
-    if (hoursMatch) {
-      totalMinutes += parseFloat(hoursMatch[1]) * 60
+    // Match all hour components - use global flag to get all matches
+    const hourMatches = lowerStr.match(/(\d+(?:\.\d+)?)h/g)
+    if (hourMatches) {
+      hourMatches.forEach(match => {
+        const value = parseFloat(match.replace('h', ''))
+        totalMinutes += value * 60
+      })
     }
     
-    // Match minutes (e.g., "30m")
-    const minutesMatch = lowerStr.match(/(\d+)m/)
-    if (minutesMatch) {
-      totalMinutes += parseInt(minutesMatch[1])
+    // Match all minute components - use global flag to get all matches  
+    const minuteMatches = lowerStr.match(/(\d+)m/g)
+    if (minuteMatches) {
+      minuteMatches.forEach(match => {
+        const value = parseInt(match.replace('m', ''))
+        totalMinutes += value
+      })
     }
     
     // If no h or m found, assume it's hours
-    if (!hoursMatch && !minutesMatch) {
+    if (!hourMatches && !minuteMatches) {
       const numberMatch = durationStr.match(/(\d+(?:\.\d+)?)/)
       if (numberMatch) {
         totalMinutes += parseFloat(numberMatch[1]) * 60
@@ -201,20 +212,50 @@ export class YouTrackApi {
   }
 
   /**
-   * Format minutes to duration string (e.g., 150 -> "2h 30m")
+   * Format minutes to duration string with smart units (e.g., 150 -> "2h 30m", 480 -> "1d", 2760 -> "1w 6h")
    */
   formatMinutesToDuration(totalMinutes) {
     if (totalMinutes === 0) return "0m"
     
-    const hours = Math.floor(totalMinutes / 60)
-    const minutes = totalMinutes % 60
+    const hours = totalMinutes / 60
+    const days = hours / 8  // 8 hours = 1 day
+    const weeks = days / 5  // 5 days = 1 week
     
-    if (hours === 0) {
-      return `${minutes}m`
-    } else if (minutes === 0) {
-      return `${hours}h`
+    if (weeks >= 1) {
+      const wholeWeeks = Math.floor(weeks)
+      // Calculate remaining minutes after subtracting whole weeks
+      const remainingMinutesAfterWeeks = totalMinutes - (wholeWeeks * 5 * 8 * 60)
+      const remainingDays = Math.floor(remainingMinutesAfterWeeks / (8 * 60))
+      const remainingHours = Math.floor((remainingMinutesAfterWeeks % (8 * 60)) / 60)
+      
+      if (remainingDays === 0 && remainingHours === 0) {
+        return `${wholeWeeks}w`
+      } else if (remainingHours === 0) {
+        return `${wholeWeeks}w ${remainingDays}d`
+      } else if (remainingDays === 0) {
+        return `${wholeWeeks}w ${remainingHours}h`
+      } else {
+        return `${wholeWeeks}w ${remainingDays}d ${remainingHours}h`
+      }
+    } else if (days >= 1) {
+      const wholeDays = Math.floor(days)
+      const remainingMinutesAfterDays = totalMinutes - (wholeDays * 8 * 60)
+      const remainingHours = Math.floor(remainingMinutesAfterDays / 60)
+      if (remainingHours === 0) {
+        return `${wholeDays}d`
+      } else {
+        return `${wholeDays}d ${remainingHours}h`
+      }
+    } else if (hours >= 1) {
+      const wholeHours = Math.floor(hours)
+      const remainingMinutes = Math.floor(totalMinutes % 60)
+      if (remainingMinutes === 0) {
+        return `${wholeHours}h`
+      } else {
+        return `${wholeHours}h ${remainingMinutes}m`
+      }
     } else {
-      return `${hours}h ${minutes}m`
+      return `${Math.floor(totalMinutes)}m`
     }
   }
 } 

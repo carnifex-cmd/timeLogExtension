@@ -61,6 +61,7 @@
       :selected-tickets="tickets.selectedTickets"
       :bookmarks-to-show="bookmarks.bookMarksToShow.value"
       :logs="tickets.logs"
+      :logged-time-data="tickets.loggedTimeData"
       :loading-logged-time="tickets.loadingLoggedTime"
       :loading="bookmarks.loading.value"
       @toggle-selection="handleToggleSelection"
@@ -78,6 +79,7 @@
       :selected-tickets="tickets.selectedTickets"
       :bookmarked-tickets="bookmarks.bookmarkedTickets"
       :logs="tickets.logs"
+      :logged-time-data="tickets.loggedTimeData"
       :loading-logged-time="tickets.loadingLoggedTime"
       :loading="tickets.loading.value"
       :search-query="tickets.searchQuery.value"
@@ -240,12 +242,12 @@ const handleSubmitLogs = async () => {
   
   try {
     const authConfig = auth.getCurrentAuthConfig()
-    await tickets.submitLogs(auth.ytUrl.value, authConfig, handleAutoLogout)
+    const result = await tickets.submitLogs(auth.ytUrl.value, authConfig, handleAutoLogout)
     
     notification.success({
-      title: '✅ Success!',
-      description: `${selectedCount} time log${selectedCount !== 1 ? 's' : ''} submitted successfully`,
-      duration: 4000
+      title: '✅ Time Logged Successfully!',
+      description: `${result.totalTimeFormatted} logged across ${result.ticketCount} ticket${result.ticketCount !== 1 ? 's' : ''} (${result.logCount} log${result.logCount !== 1 ? 's' : ''})`,
+      duration: 5000
     })
   } catch (error) {
     notification.error({

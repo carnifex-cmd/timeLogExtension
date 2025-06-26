@@ -44,35 +44,29 @@
           </template>
         </n-button>
         
-        <n-button
-          type="primary"
-          size="small"
-          circle
-          @click="$emit('open-modal', ticket.idReadable)"
-          class="time-btn"
-          :loading="isLoadingLoggedTime"
-        >
-          <template #icon>
-            <i class="fas fa-clock"></i>
-          </template>
-        </n-button>
-        
-        <n-tag 
-          v-if="timeLog" 
-          type="success" 
-          size="tiny"
-          class="time-log-tag"
-        >
-          <template #icon>
-            <i class="fas fa-check-circle"></i>
-          </template>
-          <template v-if="isValidDate(timeLog.date)">
-            {{ timeLog.time }} on {{ formatDate(timeLog.date) }}
-          </template>
-          <template v-else>
-            log added
-          </template>
-        </n-tag>
+        <div class="time-btn-container">
+          <n-button
+            :type="timeLog ? 'warning' : 'primary'"
+            size="small"
+            circle
+            @click="$emit('open-modal', ticket.idReadable)"
+            class="time-btn"
+            :loading="isLoadingLoggedTime"
+          >
+            <template #icon>
+              <i class="fas fa-clock"></i>
+            </template>
+          </n-button>
+          
+          <!-- Notification badge for total logged time -->
+          <div 
+            v-if="loggedTimeData && loggedTimeData.totalFormatted && loggedTimeData.totalFormatted !== '0m'"
+            class="time-badge total-time-badge"
+            :title="`Total logged: ${loggedTimeData.totalFormatted}`"
+          >
+            {{ loggedTimeData.totalFormatted }}
+          </div>
+        </div>
       </div>
     </div>
   </n-card>
@@ -94,6 +88,10 @@ const props = defineProps({
     type: Object,
     default: null
   },
+  loggedTimeData: {
+    type: Object,
+    default: null
+  },
   isBookmarked: {
     type: Boolean,
     default: false
@@ -109,17 +107,7 @@ const emit = defineEmits(['toggle-selection', 'open-modal', 'toggle-bookmark'])
 const summaryRef = ref(null)
 const isSummaryTruncated = ref(false)
 
-const formatDate = (dateString) => {
-  return new Date(dateString).toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric'
-  })
-}
 
-const isValidDate = (dateString) => {
-  const d = new Date(dateString)
-  return d instanceof Date && !isNaN(d)
-}
 
 onMounted(() => {
   // Check if summary text is truncated
@@ -181,8 +169,9 @@ onMounted(() => {
 .ticket-actions {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   flex-shrink: 0;
+  flex-wrap: wrap;
 }
 
 .bookmark-btn,
@@ -199,13 +188,37 @@ onMounted(() => {
   transform: scale(1.1);
 }
 
-.time-log-tag {
-  font-size: 11px;
+.time-btn-container {
+  position: relative;
+  display: inline-block;
+}
+
+.time-badge {
+  position: absolute;
+  font-size: 9px;
+  font-weight: 600;
+  border-radius: 8px;
+  padding: 1px 4px;
+  line-height: 1.2;
+  color: white;
+  border: 1px solid white;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  z-index: 10;
   white-space: nowrap;
-  max-width: 120px;
+  min-width: 16px;
+  text-align: center;
+}
+
+.total-time-badge {
+  top: -6px;
+  right: -8px;
+  background: #18a058;
+  max-width: 40px;
   overflow: hidden;
   text-overflow: ellipsis;
 }
+
+
 
 /* Override Naive UI card padding for compact look */
 .ticket-card :deep(.n-card__content) {
