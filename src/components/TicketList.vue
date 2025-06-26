@@ -23,6 +23,25 @@
         </template>
       </n-input>
       
+      <!-- Include Closed Tickets Toggle -->
+      <div class="closed-tickets-toggle">
+        <n-switch
+          v-model:value="includeClosedTickets"
+          size="medium"
+        >
+          <template #checked>
+            <span class="toggle-text">📦 Including Closed</span>
+          </template>
+          <template #unchecked>
+            <span class="toggle-text">📂 Open Only</span>
+          </template>
+        </n-switch>
+        <n-text depth="3" class="toggle-hint">
+          <i class="fas fa-info-circle"></i>
+          Shows closed tickets from last 4 weeks
+        </n-text>
+      </div>
+      
       <!-- Loading State -->
       <div v-if="loading" class="loading-container">
         <n-spin size="medium">
@@ -117,7 +136,8 @@ const props = defineProps({
   searchQuery: String,
   ticketsToShow: Number,
   bookmarkedTickets: Object,
-  loadingLoggedTime: Object
+  loadingLoggedTime: Object,
+  includeClosedTickets: Boolean
 })
 
 const emit = defineEmits([
@@ -126,12 +146,18 @@ const emit = defineEmits([
   'open-modal', 
   'toggle-bookmark',
   'show-more',
-  'submit-logs'
+  'submit-logs',
+  'toggle-closed-tickets'
 ])
 
 const searchQuery = computed({
   get: () => props.searchQuery,
   set: (value) => emit('update:searchQuery', value)
+})
+
+const includeClosedTickets = computed({
+  get: () => props.includeClosedTickets,
+  set: (value) => emit('toggle-closed-tickets', value)
 })
 
 const visibleTickets = computed(() => 
@@ -171,7 +197,30 @@ const handleToggleBookmark = (ticket) => {
 }
 
 .search-input {
+  margin-bottom: 16px;
+}
+
+.closed-tickets-toggle {
+  display: flex;
+  align-items: center;
+  gap: 12px;
   margin-bottom: 20px;
+  padding: 12px 16px;
+  background: rgba(0, 0, 0, 0.02);
+  border-radius: 8px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.toggle-text {
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.toggle-hint {
+  font-size: 11px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
 }
 
 .loading-container {

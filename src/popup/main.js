@@ -29,6 +29,7 @@ import {
   NAlert,
   NAvatar,
   NText,
+  NSwitch,
   // Create naive ui
   create
 } from 'naive-ui'
@@ -61,7 +62,8 @@ const naive = create({
     NStep,
     NAlert,
     NAvatar,
-    NText
+    NText,
+    NSwitch
   ]
 })
 

@@ -58,8 +58,24 @@ export class YouTrackApi {
     return response
   }
 
-  async fetchTickets() {
-    const url = `${this.baseUrl}/api/issues?query=Type:%20Sub-Task%20State:%20Open%20for:%20me&fields=idReadable,summary`
+  async fetchTickets(includeClosedTickets = false) {
+    let query = 'Type: Sub-Task for: me'
+    
+    if (includeClosedTickets) {
+      // Include both open and closed tickets from last 4 weeks
+      const fourWeeksAgo = new Date()
+      fourWeeksAgo.setDate(fourWeeksAgo.getDate() - 28)
+      const dateString = fourWeeksAgo.toISOString().split('T')[0] // YYYY-MM-DD format
+      
+      // Simplified query without complex parentheses - just get all tickets and filter by update date
+      query += ` updated: ${dateString} .. Today`
+    } else {
+      query += ' State: Open'
+    }
+    
+    // Properly encode the query
+    const encodedQuery = encodeURIComponent(query)
+    const url = `${this.baseUrl}/api/issues?query=${encodedQuery}&fields=idReadable,summary,state(name)`
     
     const response = await this.makeAuthenticatedRequest(url)
 

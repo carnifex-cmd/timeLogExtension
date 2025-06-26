@@ -1,6 +1,12 @@
 <template>
   <n-card 
-    :class="['ticket-card', { 'ticket-selected': isSelected }]"
+    :class="[
+      'ticket-card', 
+      { 
+        'ticket-selected': isSelected,
+        'ticket-closed': ticket.state && ticket.state.name && ticket.state.name.toLowerCase().includes('closed')
+      }
+    ]"
     size="small" 
     hoverable
   >
@@ -127,6 +133,21 @@ onMounted(() => {
 .ticket-card.ticket-selected {
   border-color: var(--primary-color);
   box-shadow: 0 0 0 1px rgba(0, 24, 146, 0.2);
+}
+
+.ticket-card.ticket-closed {
+  opacity: 0.7;
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+}
+
+.ticket-card.ticket-closed .ticket-summary {
+  text-decoration: line-through;
+  color: #6c757d;
+}
+
+.ticket-card.ticket-closed .ticket-id-tag {
+  background: #6c757d !important;
+  color: white !important;
 }
 
 .ticket-card:hover {

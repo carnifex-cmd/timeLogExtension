@@ -84,12 +84,14 @@
       :loading="tickets.loading.value"
       :search-query="tickets.searchQuery.value"
       :tickets-to-show="tickets.ticketsToShow.value"
+      :include-closed-tickets="tickets.includeClosedTickets.value"
       @update:search-query="tickets.searchQuery.value = $event"
       @toggle-selection="handleToggleSelection"
       @open-modal="handleOpenModal"
       @toggle-bookmark="handleToggleBookmark"
       @show-more="tickets.showMoreTickets"
       @submit-logs="handleSubmitLogs"
+      @toggle-closed-tickets="handleToggleClosedTickets"
     />
 
     <!-- Time Log Modal -->
@@ -212,16 +214,18 @@ const handleAutoLogout = async () => {
 }
 
 // Ticket handlers
-const loadTickets = async () => {
+const loadTickets = async (showMessage = true) => {
   try {
     const authConfig = auth.getCurrentAuthConfig()
     await tickets.fetchTickets(auth.ytUrl.value, authConfig, handleAutoLogout)
     
-    const ticketCount = tickets.tickets.value.length
-    if (ticketCount > 0) {
-      message.success(`Loaded ${ticketCount} ticket${ticketCount !== 1 ? 's' : ''}`)
-    } else {
-      message.info('No open tickets found')
+    if (showMessage) {
+      const ticketCount = tickets.tickets.value.length
+      if (ticketCount > 0) {
+        message.success(`Loaded ${ticketCount} ticket${ticketCount !== 1 ? 's' : ''}`)
+      } else {
+        message.info('No open tickets found')
+      }
     }
   } catch (error) {
     message.error('Could not load tickets: ' + error.message)
@@ -255,6 +259,23 @@ const handleSubmitLogs = async () => {
       description: 'Failed to submit logs: ' + error.message,
       duration: 5000
     })
+  }
+}
+
+// Closed tickets toggle handler
+const handleToggleClosedTickets = async (includeClosedTickets) => {
+  tickets.includeClosedTickets.value = includeClosedTickets
+  
+  try {
+    await loadTickets(false) // Don't show the "Loaded X tickets" message
+    
+    if (includeClosedTickets) {
+      message.info('Now showing open and closed tickets from last 4 weeks')
+    } else {
+      message.info('Now showing open tickets only')
+    }
+  } catch (error) {
+    message.error('Failed to load tickets: ' + error.message)
   }
 }
 

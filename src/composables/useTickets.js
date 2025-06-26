@@ -10,6 +10,7 @@ export function useTickets() {
   const loading = ref(false)
   const searchQuery = ref('')
   const ticketsToShow = ref(5)
+  const includeClosedTickets = ref(false)
 
   const filteredTickets = computed(() => {
     if (!searchQuery.value) return tickets.value
@@ -35,7 +36,7 @@ export function useTickets() {
     loading.value = true
     try {
       const api = new YouTrackApi(ytUrl, authConfig)
-      const data = await api.fetchTickets()
+      const data = await api.fetchTickets(includeClosedTickets.value)
       tickets.value = data
     } catch (error) {
       console.error('Error fetching tickets:', error)
@@ -181,6 +182,7 @@ export function useTickets() {
     loading,
     searchQuery,
     ticketsToShow,
+    includeClosedTickets,
     filteredTickets,
     fetchTickets,
     addTimeLog,
