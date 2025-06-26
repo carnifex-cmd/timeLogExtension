@@ -2,12 +2,30 @@
   <div class="ticket-list-container">
     <n-card title="🎫 Your Tickets" size="medium">
       <template #header-extra>
-        <n-tag 
-          :type="hasSelectedTickets ? 'success' : 'default'" 
-          size="small"
-        >
-          {{ selectedCount }} selected
-        </n-tag>
+        <n-space align="center" :size="12">
+          <!-- Compact Toggle -->
+          <n-tooltip trigger="hover" placement="top">
+            <template #trigger>
+              <n-switch
+                v-model:value="includeClosedTickets"
+                size="small"
+                :rail-style="{ width: '36px' }"
+              >
+                <template #checked>📦</template>
+                <template #unchecked>📂</template>
+              </n-switch>
+            </template>
+            <span>{{ includeClosedTickets ? 'Including closed tickets from last 4 weeks' : 'Open tickets only' }}</span>
+          </n-tooltip>
+          
+          <!-- Selected Count -->
+          <n-tag 
+            :type="hasSelectedTickets ? 'success' : 'default'" 
+            size="small"
+          >
+            {{ selectedCount }} selected
+          </n-tag>
+        </n-space>
       </template>
       
       <!-- Search Input -->
@@ -22,25 +40,7 @@
           <i class="fas fa-search"></i>
         </template>
       </n-input>
-      
-      <!-- Include Closed Tickets Toggle -->
-      <div class="closed-tickets-toggle">
-        <n-switch
-          v-model:value="includeClosedTickets"
-          size="medium"
-        >
-          <template #checked>
-            <span class="toggle-text">📦 Including Closed</span>
-          </template>
-          <template #unchecked>
-            <span class="toggle-text">📂 Open Only</span>
-          </template>
-        </n-switch>
-        <n-text depth="3" class="toggle-hint">
-          <i class="fas fa-info-circle"></i>
-          Shows closed tickets from last 4 weeks
-        </n-text>
-      </div>
+
       
       <!-- Loading State -->
       <div v-if="loading" class="loading-container">
@@ -198,29 +198,6 @@ const handleToggleBookmark = (ticket) => {
 
 .search-input {
   margin-bottom: 16px;
-}
-
-.closed-tickets-toggle {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 20px;
-  padding: 12px 16px;
-  background: rgba(0, 0, 0, 0.02);
-  border-radius: 8px;
-  border: 1px solid rgba(0, 0, 0, 0.08);
-}
-
-.toggle-text {
-  font-size: 13px;
-  font-weight: 500;
-}
-
-.toggle-hint {
-  font-size: 11px;
-  display: flex;
-  align-items: center;
-  gap: 4px;
 }
 
 .loading-container {
