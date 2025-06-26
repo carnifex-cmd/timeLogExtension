@@ -51,6 +51,7 @@
             :ticket="ticket"
             :is-selected="selectedTickets[ticket.idReadable] || false"
             :time-log="logs[ticket.idReadable]"
+            :is-loading-logged-time="loadingLoggedTime && loadingLoggedTime[ticket.idReadable]"
             :is-bookmarked="true"
             @toggle-selection="handleToggleSelection"
             @open-modal="handleOpenModal"
@@ -86,6 +87,7 @@ const props = defineProps({
   bookmarkedTickets: Array,
   selectedTickets: Object,
   logs: Object,
+  loadingLoggedTime: Object,
   loading: Boolean,
   bookmarksToShow: {
     type: Number,

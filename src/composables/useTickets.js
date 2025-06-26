@@ -5,6 +5,8 @@ export function useTickets() {
   const tickets = ref([])
   const selectedTickets = reactive({})
   const logs = reactive({})
+  const loggedTimeData = reactive({})
+  const loadingLoggedTime = reactive({})
   const loading = ref(false)
   const searchQuery = ref('')
   const ticketsToShow = ref(5)
@@ -118,10 +120,37 @@ export function useTickets() {
     ticketsToShow.value += 5
   }
 
+  const fetchLoggedTimeForTicket = async (ytUrl, authConfig, ticketId, logoutCallback = null) => {
+    // Set loading state
+    loadingLoggedTime[ticketId] = true
+    
+    try {
+      const api = new YouTrackApi(ytUrl, authConfig)
+      const timeData = await api.fetchLoggedTimeForTicket(ticketId)
+      loggedTimeData[ticketId] = timeData
+      return timeData
+    } catch (error) {
+      console.error(`Error fetching logged time for ticket ${ticketId}:`, error)
+      
+      // If it's an authentication error and we have a logout callback, trigger it
+      if (isAuthenticationError(error) && logoutCallback) {
+        console.log('Authentication error detected while fetching logged time, triggering automatic logout')
+        setTimeout(() => logoutCallback(), 100)
+      }
+      
+      throw error
+    } finally {
+      // Clear loading state
+      loadingLoggedTime[ticketId] = false
+    }
+  }
+
   return {
     tickets,
     selectedTickets,
     logs,
+    loggedTimeData,
+    loadingLoggedTime,
     loading,
     searchQuery,
     ticketsToShow,
@@ -131,6 +160,7 @@ export function useTickets() {
     submitLogs,
     testConnection,
     showMoreTickets,
+    fetchLoggedTimeForTicket,
     isAuthenticationError
   }
 } 

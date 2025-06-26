@@ -110,4 +110,111 @@ export class YouTrackApi {
     
     return response.json()
   }
+
+  /**
+   * Fetch logged time for a specific ticket
+   */
+  async fetchLoggedTimeForTicket(ticketId) {
+    const url = `${this.baseUrl}/api/issues/${ticketId}/timeTracking/workItems?fields=duration(presentation),date,text,author(login,name)`
+    
+    const response = await this.makeAuthenticatedRequest(url)
+    
+    if (!response.ok) {
+      throw new Error(`Failed to fetch logged time for ticket ${ticketId}`)
+    }
+    
+    const workItems = await response.json()
+    
+    // Calculate total time in minutes
+    let totalMinutes = 0
+    for (const item of workItems) {
+      if (item.duration && item.duration.presentation) {
+        totalMinutes += this.parseDurationToMinutes(item.duration.presentation)
+      }
+    }
+    
+    return {
+      totalMinutes,
+      totalFormatted: this.formatMinutesToDuration(totalMinutes),
+      workItems: workItems
+    }
+  }
+
+  /**
+   * Fetch logged time for multiple tickets (batch processing)
+   */
+  async fetchLoggedTimeForTickets(ticketIds) {
+    const loggedTimeData = {}
+    
+    // Process in batches of 5 to avoid overwhelming the API
+    for (let i = 0; i < ticketIds.length; i += 5) {
+      const batch = ticketIds.slice(i, i + 5)
+      const promises = batch.map(async (ticketId) => {
+        try {
+          const timeData = await this.fetchLoggedTimeForTicket(ticketId)
+          return { ticketId, timeData }
+        } catch (error) {
+          console.warn(`Failed to fetch time for ticket ${ticketId}:`, error)
+          return { ticketId, timeData: null }
+        }
+      })
+      
+      const results = await Promise.all(promises)
+      results.forEach(({ ticketId, timeData }) => {
+        loggedTimeData[ticketId] = timeData
+      })
+    }
+    
+    return loggedTimeData
+  }
+
+  /**
+   * Parse duration string (like "2h 30m") to total minutes
+   */
+  parseDurationToMinutes(durationStr) {
+    if (!durationStr) return 0
+    
+    let totalMinutes = 0
+    const lowerStr = durationStr.toLowerCase()
+    
+    // Match hours (e.g., "2h", "1.5h")
+    const hoursMatch = lowerStr.match(/(\d+(?:\.\d+)?)h/)
+    if (hoursMatch) {
+      totalMinutes += parseFloat(hoursMatch[1]) * 60
+    }
+    
+    // Match minutes (e.g., "30m")
+    const minutesMatch = lowerStr.match(/(\d+)m/)
+    if (minutesMatch) {
+      totalMinutes += parseInt(minutesMatch[1])
+    }
+    
+    // If no h or m found, assume it's hours
+    if (!hoursMatch && !minutesMatch) {
+      const numberMatch = durationStr.match(/(\d+(?:\.\d+)?)/)
+      if (numberMatch) {
+        totalMinutes += parseFloat(numberMatch[1]) * 60
+      }
+    }
+    
+    return totalMinutes
+  }
+
+  /**
+   * Format minutes to duration string (e.g., 150 -> "2h 30m")
+   */
+  formatMinutesToDuration(totalMinutes) {
+    if (totalMinutes === 0) return "0m"
+    
+    const hours = Math.floor(totalMinutes / 60)
+    const minutes = totalMinutes % 60
+    
+    if (hours === 0) {
+      return `${minutes}m`
+    } else if (minutes === 0) {
+      return `${hours}h`
+    } else {
+      return `${hours}h ${minutes}m`
+    }
+  }
 } 

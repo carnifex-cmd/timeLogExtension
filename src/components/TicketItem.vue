@@ -50,6 +50,7 @@
           circle
           @click="$emit('open-modal', ticket.idReadable)"
           class="time-btn"
+          :loading="isLoadingLoggedTime"
         >
           <template #icon>
             <i class="fas fa-clock"></i>
@@ -94,6 +95,10 @@ const props = defineProps({
     default: null
   },
   isBookmarked: {
+    type: Boolean,
+    default: false
+  },
+  isLoadingLoggedTime: {
     type: Boolean,
     default: false
   }

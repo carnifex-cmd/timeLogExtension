@@ -14,6 +14,42 @@
       </n-tag>
     </template>
     
+    <!-- Logged Time Information -->
+    <div v-if="loggedTime" class="logged-time-section">
+      <n-alert type="info" title="Previously Logged Time" :show-icon="false">
+        <template #icon>
+          <i class="fas fa-history"></i>
+        </template>
+        <div class="logged-time-content">
+          <div class="total-time">
+            <strong>Total: {{ loggedTime.totalFormatted }}</strong>
+          </div>
+          
+          <div v-if="loggedTime.workItems && loggedTime.workItems.length > 0" class="recent-entries">
+            <div class="recent-entries-header">
+              <strong>Recent entries:</strong>
+            </div>
+            <div 
+              v-for="(item, index) in loggedTime.workItems.slice(0, 3)" 
+              :key="index"
+              class="work-item"
+            >
+              • {{ item.duration?.presentation || 'Unknown' }}
+              <span v-if="item.date" class="work-item-date">
+                ({{ formatWorkItemDate(new Date(item.date)) }})
+              </span>
+              <span v-if="item.text" class="work-item-text">
+                - {{ item.text.slice(0, 50) }}{{ item.text.length > 50 ? '...' : '' }}
+              </span>
+            </div>
+            <div v-if="loggedTime.workItems.length > 3" class="more-entries">
+              ... and {{ loggedTime.workItems.length - 3 }} more entries
+            </div>
+          </div>
+        </div>
+      </n-alert>
+    </div>
+    
     <n-form
       ref="formRef"
       :model="formData"
@@ -120,7 +156,11 @@ const props = defineProps({
   ticketId: String,
   time: String,
   date: String,
-  comment: String
+  comment: String,
+  loggedTime: {
+    type: Object,
+    default: null
+  }
 })
 
 const emit = defineEmits(['close', 'save', 'update:time', 'update:date', 'update:comment'])
@@ -234,6 +274,15 @@ function formatDateForAPI(date) {
   return `${year}-${month}-${day}`
 }
 
+function formatWorkItemDate(date) {
+  return new Date(date).toLocaleDateString('en-US', {
+    weekday: 'short',
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric'
+  })
+}
+
 // Watch for prop changes and update form data
 watch(() => props.time, (newValue) => {
   formData.time = newValue || ''
@@ -302,5 +351,53 @@ const handleSave = () => {
 /* Date range picker styling */
 :deep(.n-date-picker) {
   width: 100%;
+}
+
+/* Logged time section styling */
+.logged-time-section {
+  margin-bottom: 20px;
+}
+
+.logged-time-content {
+  font-size: 14px;
+}
+
+.total-time {
+  margin-bottom: 12px;
+  font-size: 16px;
+  color: var(--primary-color, #0066ff);
+}
+
+.recent-entries {
+  margin-top: 8px;
+}
+
+.recent-entries-header {
+  margin-bottom: 6px;
+  font-size: 13px;
+}
+
+.work-item {
+  margin-bottom: 4px;
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--text-color-2, #666);
+}
+
+.work-item-date {
+  color: var(--text-color-3, #999);
+  font-size: 11px;
+}
+
+.work-item-text {
+  color: var(--text-color-2, #666);
+  font-style: italic;
+}
+
+.more-entries {
+  margin-top: 6px;
+  font-size: 11px;
+  color: var(--text-color-3, #999);
+  font-style: italic;
 }
 </style> 

@@ -61,6 +61,7 @@
       :selected-tickets="tickets.selectedTickets"
       :bookmarks-to-show="bookmarks.bookMarksToShow.value"
       :logs="tickets.logs"
+      :loading-logged-time="tickets.loadingLoggedTime"
       :loading="bookmarks.loading.value"
       @toggle-selection="handleToggleSelection"
       @open-modal="handleOpenModal"
@@ -77,6 +78,7 @@
       :selected-tickets="tickets.selectedTickets"
       :bookmarked-tickets="bookmarks.bookmarkedTickets"
       :logs="tickets.logs"
+      :loading-logged-time="tickets.loadingLoggedTime"
       :loading="tickets.loading.value"
       :search-query="tickets.searchQuery.value"
       :tickets-to-show="tickets.ticketsToShow.value"
@@ -95,6 +97,7 @@
       :time="modal.modal.time"
       :date="modal.modal.date"
       :comment="modal.modal.comment"
+      :logged-time="tickets.loggedTimeData[modal.modal.ticketId]"
       @close="modal.closeModal"
       @save="handleModalSave"
       @update:time="modal.modal.time = $event"
@@ -285,8 +288,20 @@ const handleClearAllBookmarks = () => {
 }
 
 // Modal handlers
-const handleOpenModal = (ticketId) => {
+const handleOpenModal = async (ticketId) => {
   const existingLog = tickets.logs[ticketId]
+  
+  // Fetch logged time data for this ticket if not already loaded
+  if (!tickets.loggedTimeData[ticketId]) {
+    try {
+      const authConfig = auth.getCurrentAuthConfig()
+      await tickets.fetchLoggedTimeForTicket(auth.ytUrl.value, authConfig, ticketId, handleAutoLogout)
+    } catch (error) {
+      console.warn('Could not fetch logged time data:', error.message)
+      // Continue opening modal even if logged time fetch fails
+    }
+  }
+  
   modal.openModal(ticketId, existingLog)
 }
 
