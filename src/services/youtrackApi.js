@@ -129,18 +129,13 @@ export class YouTrackApi {
     let totalMinutes = 0
     for (const item of workItems) {
       if (item.duration && item.duration.presentation) {
-        const parsedMinutes = this.parseDurationToMinutes(item.duration.presentation)
-        console.log(`Parsing "${item.duration.presentation}" -> ${parsedMinutes} minutes`)
-        totalMinutes += parsedMinutes
+        totalMinutes += this.parseDurationToMinutes(item.duration.presentation)
       }
     }
     
-    const formatted = this.formatMinutesToDuration(totalMinutes)
-    console.log(`Total ${totalMinutes} minutes -> formatted as "${formatted}"`)
-    
     return {
       totalMinutes,
-      totalFormatted: formatted,
+      totalFormatted: this.formatMinutesToDuration(totalMinutes),
       workItems: workItems
     }
   }
