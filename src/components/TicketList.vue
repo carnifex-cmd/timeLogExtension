@@ -27,16 +27,41 @@
         </n-space>
       </template>
       
-      <!-- Search Input -->
+      <!-- Search and Filter Section -->
       <n-input
         v-model:value="searchQuery"
         placeholder="🔍 Search tickets by ID or summary..."
         clearable
-        size="medium"
+        size="large"
         class="search-input"
       >
         <template #prefix>
           <i class="fas fa-search"></i>
+        </template>
+        <template #suffix>
+          <n-button
+            :type="selectedProject ? 'primary' : 'default'"
+            size="small"
+            @click="showProjectFilter = !showProjectFilter"
+            class="filter-button"
+          >
+            <template #icon>
+              <i class="fas fa-filter"></i>
+            </template>
+            {{ selectedProject ? getSelectedProjectLabel() : 'All Projects' }}
+          </n-button>
+          
+          <!-- Project Filter Dropdown -->
+          <n-dropdown
+            :show="showProjectFilter"
+            :options="projectDropdownOptions"
+            @select="handleProjectSelect"
+            @clickoutside="showProjectFilter = false"
+            placement="bottom-end"
+            trigger="manual"
+          >
+            <span></span>
+          </n-dropdown>
         </template>
       </n-input>
 
@@ -122,7 +147,7 @@
 </template>
 
 <script setup>
-import { computed, defineProps, defineEmits } from 'vue'
+import { computed, defineProps, defineEmits, ref, h } from 'vue'
 import TicketItem from './TicketItem.vue'
 
 const props = defineProps({
@@ -136,11 +161,14 @@ const props = defineProps({
   ticketsToShow: Number,
   bookmarkedTickets: Object,
   loadingLoggedTime: Object,
-  includeClosedTickets: Boolean
+  includeClosedTickets: Boolean,
+  selectedProject: String,
+  availableProjects: Array
 })
 
 const emit = defineEmits([
   'update:searchQuery',
+  'update:selectedProject',
   'toggle-selection', 
   'open-modal', 
   'toggle-bookmark',
@@ -154,10 +182,63 @@ const searchQuery = computed({
   set: (value) => emit('update:searchQuery', value)
 })
 
+const selectedProject = computed({
+  get: () => props.selectedProject,
+  set: (value) => emit('update:selectedProject', value)
+})
+
 const includeClosedTickets = computed({
   get: () => props.includeClosedTickets,
   set: (value) => emit('toggle-closed-tickets', value)
 })
+
+// Computed property for project filter options
+const projectOptions = computed(() => {
+  if (!props.availableProjects || props.availableProjects.length === 0) {
+    return []
+  }
+  
+  return props.availableProjects.map(project => ({
+    label: `${project.shortName} - ${project.name}`,
+    value: project.shortName
+  }))
+})
+
+// Dropdown options for the filter
+const projectDropdownOptions = computed(() => {
+  const options = [
+    {
+      label: 'All Projects',
+      key: '',
+      icon: () => h('i', { class: 'fas fa-list' })
+    }
+  ]
+  
+  if (props.availableProjects && props.availableProjects.length > 0) {
+    props.availableProjects.forEach(project => {
+      options.push({
+        label: `${project.shortName} - ${project.name}`,
+        key: project.shortName,
+        icon: () => h('i', { class: 'fas fa-folder' })
+      })
+    })
+  }
+  
+  return options
+})
+
+// Get display label for selected project
+const getSelectedProjectLabel = () => {
+  if (!props.selectedProject) return 'All Projects'
+  const project = props.availableProjects?.find(p => p.shortName === props.selectedProject)
+  return project ? project.shortName : props.selectedProject
+}
+
+// Handle project selection
+const handleProjectSelect = (key) => {
+  selectedProject.value = key || ''
+  showProjectFilter.value = false
+}
 
 const visibleTickets = computed(() => 
   props.filteredTickets.slice(0, props.ticketsToShow)
@@ -186,6 +267,8 @@ const handleOpenModal = (ticketId) => {
 const handleToggleBookmark = (ticket) => {
   emit('toggle-bookmark', ticket)
 }
+
+const showProjectFilter = ref(false)
 </script>
 
 <style scoped>
@@ -197,6 +280,27 @@ const handleToggleBookmark = (ticket) => {
 
 .search-input {
   margin-bottom: 16px;
+  width: 100%;
+}
+
+.search-filter-container {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 16px;
+  align-items: stretch;
+}
+
+.search-filter-container .search-input {
+  flex: 1;
+  margin-bottom: 0;
+}
+
+.project-filter {
+  flex-shrink: 0;
+}
+
+.project-filter .n-base-selection {
+  height: 100%;
 }
 
 .loading-container {
@@ -249,5 +353,18 @@ const handleToggleBookmark = (ticket) => {
   .tickets-grid {
     gap: 1px;
   }
+}
+
+.filter-button {
+  margin-left: 8px;
+  white-space: nowrap;
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.filter-button :deep(.n-button__content) {
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 </style> 

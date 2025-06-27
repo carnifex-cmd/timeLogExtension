@@ -11,13 +11,41 @@ export function useTickets() {
   const searchQuery = ref('')
   const ticketsToShow = ref(5)
   const includeClosedTickets = ref(true)
+  const selectedProject = ref('')
 
   const filteredTickets = computed(() => {
-    if (!searchQuery.value) return tickets.value
-    return tickets.value.filter(ticket => 
-      ticket.idReadable.toLowerCase().includes(searchQuery.value.toLowerCase()) || 
-      ticket.summary.toLowerCase().includes(searchQuery.value.toLowerCase())
-    )
+    let filtered = tickets.value
+
+    // Apply search filter
+    if (searchQuery.value) {
+      filtered = filtered.filter(ticket => 
+        ticket.idReadable.toLowerCase().includes(searchQuery.value.toLowerCase()) || 
+        ticket.summary.toLowerCase().includes(searchQuery.value.toLowerCase())
+      )
+    }
+
+    // Apply project filter
+    if (selectedProject.value) {
+      filtered = filtered.filter(ticket => 
+        ticket.project && ticket.project.shortName === selectedProject.value
+      )
+    }
+
+    return filtered
+  })
+
+  // Computed property to get unique projects from tickets
+  const availableProjects = computed(() => {
+    const projects = tickets.value
+      .map(ticket => ticket.project)
+      .filter(project => project && project.shortName) // Filter out null/undefined projects
+      .reduce((acc, project) => {
+        // Use a Map to avoid duplicates based on shortName
+        acc.set(project.shortName, project)
+        return acc
+      }, new Map())
+    
+    return Array.from(projects.values()).sort((a, b) => a.name.localeCompare(b.name))
   })
 
   /**
@@ -183,6 +211,8 @@ export function useTickets() {
     searchQuery,
     ticketsToShow,
     includeClosedTickets,
+    selectedProject,
+    availableProjects,
     filteredTickets,
     fetchTickets,
     addTimeLog,

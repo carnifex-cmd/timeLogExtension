@@ -75,7 +75,7 @@ export class YouTrackApi {
     
     // Properly encode the query
     const encodedQuery = encodeURIComponent(query)
-    const url = `${this.baseUrl}/api/issues?query=${encodedQuery}&fields=idReadable,summary,state(name)`
+    const url = `${this.baseUrl}/api/issues?query=${encodedQuery}&fields=idReadable,summary,state(name),project(shortName,name)`
     
     const response = await this.makeAuthenticatedRequest(url)
 
